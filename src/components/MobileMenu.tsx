@@ -9,19 +9,20 @@ import { supabase } from "@/lib/supabase";
 export default function MobileMenu() {
     const [isOpen, setIsOpen] = useState(false);
     const [mounted, setMounted] = useState(false);
-    const [categories, setCategories] = useState<Category[]>(mobileMenuCategories);
+    const [categories, setCategories] = useState<any[]>([]);
+    const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
 
-    // Fetch categories from Supabase
+    // Fetch categories and subcategories from Supabase
     useEffect(() => {
         async function fetchCategories() {
             try {
                 const { data, error } = await supabase
                     .from("categories")
-                    .select("*")
+                    .select("*, subcategories(*)")
                     .order("created_at", { ascending: true });
 
                 if (data && !error && data.length > 0) {
-                    setCategories(data as Category[]);
+                    setCategories(data);
                 }
             } catch (err) {
                 console.error("Failed to load categories:", err);
@@ -84,29 +85,76 @@ export default function MobileMenu() {
                 {/* Categories List */}
                 <div className="flex-1 overflow-y-auto px-4 py-6 flex flex-col gap-3">
                     {categories.map((category) => (
-                        <Link
-                            key={category.id}
-                            href={category.link || "/product"}
-                            onClick={() => setIsOpen(false)}
-                            className="flex items-center gap-4 group p-2 rounded-xl hover:bg-white/5 transition-colors"
-                        >
-                            <div className="size-14 bg-white shrink-0 rounded-lg flex items-center justify-center overflow-hidden shadow-sm">
-                                {category.image ? (
-                                    <img src={category.image} alt={category.name} className="w-full h-full object-cover" />
-                                ) : (
-                                    <span className="material-symbols-outlined text-slate-400 text-3xl group-hover:text-primary transition-colors">
-                                        {category.icon || "category"}
-                                    </span>
-                                )}
-                            </div>
-                            <span className="text-white font-medium flex-1 text-sm group-hover:text-primary transition-colors">
-                                {category.name}
-                            </span>
-                            <span className="material-symbols-outlined text-white/40 group-hover:text-primary transition-colors">
-                                chevron_right
-                            </span>
-                        </Link>
+                        <div key={category.id} className="flex flex-col">
+                            <button
+                                onClick={() => {
+                                    if (category.subcategories && category.subcategories.length > 0) {
+                                        setExpandedCategory(expandedCategory === category.id ? null : category.id);
+                                    } else {
+                                        setIsOpen(false);
+                                        window.location.href = `/product?category=${category.id}`;
+                                    }
+                                }}
+                                className="flex items-center gap-4 group p-2 rounded-xl hover:bg-white/5 transition-colors w-full text-left"
+                            >
+                                <div className="size-14 bg-white shrink-0 rounded-lg flex items-center justify-center overflow-hidden shadow-sm">
+                                    {category.image ? (
+                                        <img src={category.image} alt={category.name} className="w-full h-full object-cover" />
+                                    ) : (
+                                        <span className="material-symbols-outlined text-slate-400 text-3xl group-hover:text-primary transition-colors">
+                                            {category.icon || "category"}
+                                        </span>
+                                    )}
+                                </div>
+                                <span className="text-white font-medium flex-1 text-sm group-hover:text-primary transition-colors">
+                                    {category.name}
+                                </span>
+                                <span className={`material-symbols-outlined text-white/40 group-hover:text-primary transition-transform ${expandedCategory === category.id ? 'rotate-90' : ''}`}>
+                                    chevron_right
+                                </span>
+                            </button>
+                            {/* Subcategories */}
+                            {expandedCategory === category.id && category.subcategories && category.subcategories.length > 0 && (
+                                <div className="pl-16 pr-2 py-2 flex flex-col gap-2">
+                                    {category.subcategories.map((sub: any) => (
+                                        <Link
+                                            key={sub.id}
+                                            href={`/product?category=${category.id}&subcategory=${sub.id}`}
+                                            onClick={() => setIsOpen(false)}
+                                            className="text-white/70 hover:text-primary text-sm py-1.5 transition-colors block"
+                                        >
+                                            {sub.name}
+                                        </Link>
+                                    ))}
+                                    <Link
+                                        href={`/product?category=${category.id}`}
+                                        onClick={() => setIsOpen(false)}
+                                        className="text-primary hover:text-primary-light text-sm py-1.5 font-medium transition-colors block mt-1"
+                                    >
+                                        Voir tout {category.name}
+                                    </Link>
+                                </div>
+                            )}
+                        </div>
                     ))}
+
+                    {/* Admin Access Link */}
+                    <div className="mt-4 pt-4 border-t border-white/10">
+                        <Link
+                            href="/admin-login"
+                            onClick={() => setIsOpen(false)}
+                            className="flex items-center gap-4 p-3 rounded-xl bg-primary/10 border border-primary/20 hover:bg-primary/20 transition-all group"
+                        >
+                            <div className="size-10 bg-primary/20 rounded-lg flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                                <span className="material-symbols-outlined">admin_panel_settings</span>
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="text-white font-bold text-sm">Espace Admin</span>
+                                <span className="text-primary-light/60 text-[10px]">Gérer la boutique</span>
+                            </div>
+                            <span className="material-symbols-outlined text-white/20 ml-auto text-sm">open_in_new</span>
+                        </Link>
+                    </div>
                 </div>
             </div>
         </>

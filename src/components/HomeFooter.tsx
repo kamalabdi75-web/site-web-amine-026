@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import Logo from "./Logo";
 
 export default function HomeFooter() {
     return (
@@ -6,44 +9,39 @@ export default function HomeFooter() {
             <div className="max-w-[1440px] mx-auto px-4 lg:px-10 py-12">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
                     <div className="flex flex-col gap-4">
-                        <div className="flex items-center gap-2 text-primary">
-                            <div className="size-8 flex items-center justify-center bg-[#FFF8E6] rounded-full text-primary font-black text-xl">
-                                e
-                            </div>
-                            <h3 className="font-black text-xl">ElectroMart</h3>
-                        </div>
+                        <Logo />
                         <p className="text-sm text-slate-500 dark:text-slate-400">
-                            Your trusted partner for high-quality home appliances in Algeria. Experience comfort and innovation at home.
+                            Votre partenaire de confiance pour l'électroménager de haute qualité en Algérie. Vivez le confort et l'innovation chez vous.
                         </p>
                     </div>
                     <div>
-                        <h4 className="font-bold text-slate-900 dark:text-white mb-4">Customer Service</h4>
+                        <h4 className="font-bold text-slate-900 dark:text-white mb-4">Service Client</h4>
                         <ul className="flex flex-col gap-2 text-sm text-slate-500 dark:text-slate-400">
-                            <li><Link className="hover:text-primary transition-colors" href="#">Help Center</Link></li>
-                            <li><Link className="hover:text-primary transition-colors" href="#">Returns & Refunds</Link></li>
-                            <li><Link className="hover:text-primary transition-colors" href="#">Delivery Info</Link></li>
-                            <li><Link className="hover:text-primary transition-colors" href="#">Track Order</Link></li>
+                            <li><Link className="hover:text-primary transition-colors" href="#">Centre d'Aide</Link></li>
+                            <li><Link className="hover:text-primary transition-colors" href="#">Retours & Remboursements</Link></li>
+                            <li><Link className="hover:text-primary transition-colors" href="#">Informations de Livraison</Link></li>
+                            <li><Link className="hover:text-primary transition-colors" href="#">Suivre ma commande</Link></li>
                         </ul>
                     </div>
                     <div>
-                        <h4 className="font-bold text-slate-900 dark:text-white mb-4">Categories</h4>
+                        <h4 className="font-bold text-slate-900 dark:text-white mb-4">Catégories</h4>
                         <ul className="flex flex-col gap-2 text-sm text-slate-500 dark:text-slate-400">
-                            <li><Link className="hover:text-primary transition-colors" href="#">Machine a café</Link></li>
-                            <li><Link className="hover:text-primary transition-colors" href="#">cuisine et cuisson </Link></li>
-                            <li><Link className="hover:text-primary transition-colors" href="#">maison cnbretion     </Link></li>
-                            <li><Link className="hover:text-primary transition-colors" href="#">beaute-sante </Link></li><li><Link className="hover:text-primary transition-colors" href="#">informatique - tabblette </Link></li>
+                            <li><Link className="hover:text-primary transition-colors" href="#">Machine à café</Link></li>
+                            <li><Link className="hover:text-primary transition-colors" href="#">Cuisine et cuisson</Link></li>
+                            <li><Link className="hover:text-primary transition-colors" href="#">Maison & Entretien</Link></li>
+                            <li><Link className="hover:text-primary transition-colors" href="#">Beauté & Santé</Link></li><li><Link className="hover:text-primary transition-colors" href="#">Informatique & Tablettes</Link></li>
                         </ul>
                     </div>
                     <div>
-                        <h4 className="font-bold text-slate-900 dark:text-white mb-4">Contact Us</h4>
+                        <h4 className="font-bold text-slate-900 dark:text-white mb-4">Contactez-nous</h4>
                         <ul className="flex flex-col gap-2 text-sm text-slate-500 dark:text-slate-400">
                             <li className="flex items-center gap-2">
                                 <span className="material-symbols-outlined text-[18px]">location_on</span>
-                                Algiers, Algeria
+                                Alger, Algérie
                             </li>
                             <li className="flex items-center gap-2">
                                 <span className="material-symbols-outlined text-[18px]">call</span>
-                                +213 770 06 16 12
+                                <a href="tel:+213770061612" className="hover:underline hover:text-primary transition-colors">+213 770 06 16 12</a>
                             </li>
                             <li className="flex items-center gap-2">
                                 <span className="material-symbols-outlined text-[18px]">mail</span>
@@ -53,7 +51,7 @@ export default function HomeFooter() {
                     </div>
                 </div>
                 <div className="mt-10 pt-6 border-t border-slate-100 dark:border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4">
-                    <p className="text-xs text-slate-400">© 2026 Electro Mart. All rights reserved.</p>
+                    <p className="text-xs text-slate-400">© 2026 Electromart. Tous droits réservés.</p>
                     <div className="flex gap-4">
                         <Link className="text-slate-400 hover:text-primary text-xs font-medium" href="#">Facebook</Link>
                         <Link className="text-slate-400 hover:text-primary text-xs font-medium" href="#">Instagram</Link>

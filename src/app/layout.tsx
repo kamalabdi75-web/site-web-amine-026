@@ -1,6 +1,8 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
+import { Analytics } from "@vercel/analytics/react";
 import "./globals.css";
+import { SettingsProvider } from "@/context/SettingsContext";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -12,6 +14,14 @@ export const metadata: Metadata = {
   title: "Electro Mart - Home Appliances",
   description: "Your trusted partner for high-quality home appliances in Algeria.",
 };
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+};
+
+import WhatsAppButton from "@/components/WhatsAppButton";
 
 export default function RootLayout({
   children,
@@ -26,7 +36,11 @@ export default function RootLayout({
       <body
         className={`${inter.variable} bg-white md:dark:bg-slate-900 font-display text-slate-900 md:dark:text-slate-100 antialiased overflow-x-hidden`}
       >
-        {children}
+        <SettingsProvider>
+          {children}
+          <WhatsAppButton />
+        </SettingsProvider>
+        <Analytics />
       </body>
     </html>
   );
