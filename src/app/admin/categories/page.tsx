@@ -247,7 +247,7 @@ export default function CategoriesAdminPage() {
                                             {cat.icon && <span className="material-symbols-outlined text-[20px]">{cat.icon}</span>}
                                             <span className="text-sm">{cat.name}</span>
                                         </div>
-                                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <div className="flex items-center gap-1 transition-opacity">
                                             <button onClick={(e) => openEditCatModal(cat, e)} className="p-1.5 text-slate-400 hover:text-primary transition-colors rounded-lg hover:bg-primary/10">
                                                 <span className="material-symbols-outlined text-[16px]">edit</span>
                                             </button>

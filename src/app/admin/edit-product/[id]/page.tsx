@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import AdminSidebar from "@/components/AdminSidebar";
@@ -9,7 +9,12 @@ import AdminMediaUpload, { MediaItem } from "@/components/AdminMediaUpload";
 import dynamic from 'next/dynamic';
 import 'react-quill-new/dist/quill.snow.css';
 
-const ReactQuill = dynamic(() => import('react-quill-new'), { ssr: false });
+const ReactQuill = dynamic(async () => {
+    const { default: RQ } = await import('react-quill-new');
+    return function DynamicQuill({ forwardedRef, ...props }: any) {
+        return <RQ ref={forwardedRef} {...props} />;
+    };
+}, { ssr: false });
 
 export default function EditProductPage() {
     const router = useRouter();
@@ -43,6 +48,75 @@ export default function EditProductPage() {
     const [testimonials, setTestimonials] = useState<{ name: string, role: string, content: string, rating: number }[]>([]);
     const [media, setMedia] = useState<MediaItem[]>([]);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+    // Quill editor reference for custom handlers
+    const reactQuillRef = useRef<any>(null);
+
+    // Custom image handler for ReactQuill
+    const imageHandler = () => {
+        const input = document.createElement('input');
+        input.setAttribute('type', 'file');
+        input.setAttribute('accept', 'image/*');
+        input.click();
+
+        input.onchange = async () => {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                const fileExt = file.name.split('.').pop();
+                const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
+                const filePath = `landing-content/${fileName}`;
+
+                try {
+                    // Show some uploading state if needed, or just let it upload
+                    const { data, error } = await supabase.storage
+                        .from('landing_media')
+                        .upload(filePath, file, {
+                            cacheControl: '3600',
+                            upsert: false
+                        });
+
+                    if (error) {
+                        console.error("Error uploading image:", error);
+                        alert("Erreur lors du téléchargement de l'image.");
+                        return;
+                    }
+
+                    const { data: publicUrlData } = supabase.storage
+                        .from('landing_media')
+                        .getPublicUrl(filePath);
+
+                    // Insert the image into the editor
+                    const quill = reactQuillRef.current?.getEditor();
+                    if (quill) {
+                        const range = quill.getSelection();
+                        const position = range ? range.index : quill.getLength();
+                        quill.insertEmbed(position, 'image', publicUrlData.publicUrl);
+                        quill.setSelection(position + 1);
+                    }
+                } catch (err) {
+                    console.error("Upload failed", err);
+                    alert("Erreur lors du téléchargement.");
+                }
+            }
+        };
+    };
+
+    // Memoize modules to prevent Quill from constantly re-rendering and losing focus
+    const quillModules = useMemo(() => ({
+        toolbar: {
+            container: [
+                [{ 'header': [2, 3, false] }],
+                ['bold', 'italic', 'underline', 'strike'],
+                [{ 'color': [] }, { 'background': [] }],
+                [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+                ['link', 'image', 'video'],
+                ['clean']
+            ],
+            handlers: {
+                image: imageHandler
+            }
+        }
+    }), []);
 
     useEffect(() => {
         if (id) {
@@ -349,19 +423,11 @@ export default function EditProductPage() {
                                                 <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Landing Page Content</label>
                                                 <div className="bg-white dark:bg-slate-900 overflow-hidden rounded-lg border border-slate-300 dark:border-slate-600 [&_.ql-container]:min-h-[250px] [&_.ql-container]:text-base [&_.ql-toolbar]:border-none [&_.ql-toolbar]:border-b [&_.ql-toolbar]:border-slate-200 dark:[&_.ql-toolbar]:border-slate-700 [&_.ql-container]:border-none [&_.ql-toolbar]:flex [&_.ql-toolbar]:flex-wrap">
                                                     <ReactQuill
+                                                        forwardedRef={reactQuillRef}
                                                         theme="snow"
                                                         value={landingContent}
                                                         onChange={setLandingContent}
-                                                        modules={{
-                                                            toolbar: [
-                                                                [{ 'header': [2, 3, false] }],
-                                                                ['bold', 'italic', 'underline', 'strike'],
-                                                                [{ 'color': [] }, { 'background': [] }],
-                                                                [{ 'list': 'ordered' }, { 'list': 'bullet' }],
-                                                                ['link', 'image', 'video'],
-                                                                ['clean']
-                                                            ],
-                                                        }}
+                                                        modules={quillModules}
                                                         placeholder="Rédigez le contenu riche de la landing page (HTML supporté)..."
                                                     />
                                                 </div>
