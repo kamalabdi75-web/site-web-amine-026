@@ -150,7 +150,9 @@ export default function AdminProductsPage() {
                                                                 </div>
                                                                 <div className="flex flex-col">
                                                                     <span className="text-sm font-medium text-text-main line-clamp-1">{product.name}</span>
-                                                                    <span className="text-xs text-text-muted line-clamp-1 max-w-[200px]">{product.description}</span>
+                                                                    <span className="text-xs text-text-muted line-clamp-1 max-w-[200px]" title={product.description?.replace(/<[^>]*>?/gm, '')}>
+                                                                        {product.description?.replace(/<[^>]*>?/gm, '') || ''}
+                                                                    </span>
                                                                 </div>
                                                             </div>
                                                         </td>

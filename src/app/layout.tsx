@@ -11,14 +11,19 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Electro Mart - Home Appliances",
-  description: "Your trusted partner for high-quality home appliances in Algeria.",
+  title: "Electro Mart - Électroménager en Algérie",
+  description: "Découvrez le plus grand choix d'électroménager authentique en Algérie. Meilleurs prix, garantie assurée et livraison à domicile.",
+  openGraph: {
+    title: "Electro Mart - Électroménager en Algérie",
+    description: "Meilleurs prix, garantie assurée et livraison à domicile.",
+    type: "website",
+  },
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
+  maximumScale: 5, // Allow pinch-zoom for accessibility
 };
 
 import WhatsAppButton from "@/components/WhatsAppButton";
@@ -29,8 +34,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="fr">
       <head>
+        {/* Preconnect to speed up font CDN (DNS + TLS before CSS fetch) */}
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
       </head>
       <body

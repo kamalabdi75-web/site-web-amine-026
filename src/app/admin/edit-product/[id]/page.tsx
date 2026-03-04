@@ -5,6 +5,11 @@ import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import AdminSidebar from "@/components/AdminSidebar";
+import AdminMediaUpload, { MediaItem } from "@/components/AdminMediaUpload";
+import dynamic from 'next/dynamic';
+import 'react-quill-new/dist/quill.snow.css';
+
+const ReactQuill = dynamic(() => import('react-quill-new'), { ssr: false });
 
 export default function EditProductPage() {
     const router = useRouter();
@@ -28,8 +33,15 @@ export default function EditProductPage() {
     const [stock, setStock] = useState("");
     const [description, setDescription] = useState("");
     const [specifications, setSpecifications] = useState("");
+    const [landingContent, setLandingContent] = useState("");
+    const [landingImage, setLandingImage] = useState("");
     const [imageUrl, setImageUrl] = useState("");
     const [images, setImages] = useState<string[]>([]);
+    const [socialLinks, setSocialLinks] = useState<{ platform: string, url: string }[]>([{ platform: "facebook", url: "" }]);
+    const [videos, setVideos] = useState<{ url: string }[]>([{ url: "" }]);
+    const [features, setFeatures] = useState<{ title: string, description: string, icon: string }[]>([]);
+    const [testimonials, setTestimonials] = useState<{ name: string, role: string, content: string, rating: number }[]>([]);
+    const [media, setMedia] = useState<MediaItem[]>([]);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     useEffect(() => {
@@ -89,7 +101,27 @@ export default function EditProductPage() {
                 setDescription(data.description || "");
                 setImageUrl(data.image || "");
                 setSpecifications(data.specifications || "");
+                setLandingContent(data.landing_content || "");
+                setLandingImage(data.landing_image || "");
                 setImages(data.images || []);
+
+                if (data.landing_data) {
+                    if (data.landing_data.socialLinks && data.landing_data.socialLinks.length > 0) {
+                        setSocialLinks(data.landing_data.socialLinks);
+                    }
+                    if (data.landing_data.videos && data.landing_data.videos.length > 0) {
+                        setVideos(data.landing_data.videos);
+                    }
+                    if (data.landing_data.features && data.landing_data.features.length > 0) {
+                        setFeatures(data.landing_data.features);
+                    }
+                    if (data.landing_data.testimonials && data.landing_data.testimonials.length > 0) {
+                        setTestimonials(data.landing_data.testimonials);
+                    }
+                    if (data.landing_data.media && data.landing_data.media.length > 0) {
+                        setMedia(data.landing_data.media);
+                    }
+                }
             }
         } catch (err: any) {
             setError("Failed to load product details: " + err.message);
@@ -115,8 +147,17 @@ export default function EditProductPage() {
                 stock: parseInt(stock, 10),
                 description,
                 specifications,
+                landing_content: landingContent || null,
+                landing_image: landingImage || null,
                 image: imageUrl || null,
-                images: images.filter(img => img.trim() !== "")
+                images: images.filter(img => img.trim() !== ""),
+                landing_data: {
+                    socialLinks: socialLinks.filter(link => link.url.trim() !== ""),
+                    videos: videos.filter(video => video.url.trim() !== ""),
+                    features: features.filter(f => f.title.trim() !== ""),
+                    testimonials: testimonials.filter(t => t.name.trim() !== "" && t.content.trim() !== ""),
+                    media: media
+                }
             };
 
             const { error: supabaseError } = await supabase
@@ -276,10 +317,26 @@ export default function EditProductPage() {
 
                                         <div>
                                             <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider mb-4 border-b border-slate-100 dark:border-slate-700 pb-2">Détails et Multimédia</h3>
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-                                                <div className="flex flex-col gap-2">
+                                            <div className="grid grid-cols-1 gap-6 items-start">
+                                                <div className="flex flex-col gap-2 w-full max-w-full">
                                                     <label className="text-sm font-semibold text-slate-700 dark:text-slate-300" htmlFor="description">Description du produit</label>
-                                                    <textarea value={description} onChange={(e) => setDescription(e.target.value)} className="rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-sm focus:ring-primary focus:border-primary w-full shadow-sm resize-none min-h-[160px]" id="description" placeholder="Description détaillée..." rows={6}></textarea>
+                                                    <div className="bg-white dark:bg-slate-900 overflow-hidden rounded-lg border border-slate-300 dark:border-slate-600 [&_.ql-container]:min-h-[160px] [&_.ql-container]:text-base [&_.ql-toolbar]:border-none [&_.ql-toolbar]:border-b [&_.ql-toolbar]:border-slate-200 dark:[&_.ql-toolbar]:border-slate-700 [&_.ql-container]:border-none [&_.ql-toolbar]:flex [&_.ql-toolbar]:flex-wrap">
+                                                        <ReactQuill
+                                                            theme="snow"
+                                                            value={description}
+                                                            onChange={setDescription}
+                                                            modules={{
+                                                                toolbar: [
+                                                                    [{ 'header': [2, 3, false] }],
+                                                                    ['bold', 'italic', 'underline', 'strike'],
+                                                                    [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+                                                                    ['link', 'image', 'video'],
+                                                                    ['clean']
+                                                                ],
+                                                            }}
+                                                            placeholder="Description détaillée..."
+                                                        />
+                                                    </div>
                                                 </div>
 
                                                 <div className="flex flex-col gap-2">
@@ -288,8 +345,263 @@ export default function EditProductPage() {
                                                 </div>
                                             </div>
 
+                                            <div className="mt-6 flex flex-col gap-2 w-full max-w-full">
+                                                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Landing Page Content</label>
+                                                <div className="bg-white dark:bg-slate-900 overflow-hidden rounded-lg border border-slate-300 dark:border-slate-600 [&_.ql-container]:min-h-[250px] [&_.ql-container]:text-base [&_.ql-toolbar]:border-none [&_.ql-toolbar]:border-b [&_.ql-toolbar]:border-slate-200 dark:[&_.ql-toolbar]:border-slate-700 [&_.ql-container]:border-none [&_.ql-toolbar]:flex [&_.ql-toolbar]:flex-wrap">
+                                                    <ReactQuill
+                                                        theme="snow"
+                                                        value={landingContent}
+                                                        onChange={setLandingContent}
+                                                        modules={{
+                                                            toolbar: [
+                                                                [{ 'header': [2, 3, false] }],
+                                                                ['bold', 'italic', 'underline', 'strike'],
+                                                                [{ 'color': [] }, { 'background': [] }],
+                                                                [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+                                                                ['link', 'image', 'video'],
+                                                                ['clean']
+                                                            ],
+                                                        }}
+                                                        placeholder="Rédigez le contenu riche de la landing page (HTML supporté)..."
+                                                    />
+                                                </div>
+                                                <p className="text-[10px] text-slate-400 mt-1">
+                                                    💡 Astuce Vidéo : Utilisez un lien d'intégration (Embed) pour les vidéos, ex: <code className="bg-slate-100 dark:bg-slate-800 px-1 rounded">https://www.youtube.com/embed/votre_code</code>
+                                                </p>
+                                            </div>
+
+                                            <div className="mt-6 flex flex-col gap-2">
+                                                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Landing Image (URL)</label>
+                                                <input
+                                                    value={landingImage}
+                                                    onChange={(e) => setLandingImage(e.target.value)}
+                                                    className="rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-sm focus:ring-primary focus:border-primary w-full shadow-sm py-2.5 px-3"
+                                                    placeholder="https://... (URL de l'image de la landing page)"
+                                                    type="url"
+                                                />
+                                                {landingImage && (
+                                                    <div className="mt-2 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 max-h-64">
+                                                        <img src={landingImage} alt="Landing page image preview" className="w-full object-cover" />
+                                                    </div>
+                                                )}
+                                                <p className="text-[10px] text-slate-400">Cette image sera affichée directement sous la description du produit.</p>
+                                            </div>
+
+                                            <div className="mt-6 flex flex-col gap-2 pt-4 border-t border-slate-100 dark:border-slate-700">
+                                                <AdminMediaUpload media={media} onChange={setMedia} />
+                                            </div>
+
                                             <div className="mt-6 flex flex-col gap-4">
-                                                <div className="flex flex-col gap-2">
+                                                <div className="flex flex-col gap-2 border-t border-slate-100 dark:border-slate-700 pt-4">
+                                                    <div className="flex items-center justify-between">
+                                                        <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Réseaux Sociaux (Landing Page)</label>
+                                                        <button type="button" onClick={() => setSocialLinks([...socialLinks, { platform: "facebook", url: "" }])} className="text-xs text-primary hover:text-primary-dark font-medium flex items-center gap-1">
+                                                            <span className="material-symbols-outlined text-[16px]">add</span> Ajouter
+                                                        </button>
+                                                    </div>
+                                                    <div className="flex flex-col gap-3">
+                                                        {socialLinks.map((link, idx) => (
+                                                            <div key={idx} className="flex items-center gap-2">
+                                                                <select
+                                                                    value={link.platform}
+                                                                    onChange={(e) => {
+                                                                        const newLinks = [...socialLinks];
+                                                                        newLinks[idx].platform = e.target.value;
+                                                                        setSocialLinks(newLinks);
+                                                                    }}
+                                                                    className="rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-sm focus:ring-primary focus:border-primary shadow-sm py-2"
+                                                                >
+                                                                    <option value="facebook">Facebook</option>
+                                                                    <option value="instagram">Instagram</option>
+                                                                    <option value="tiktok">TikTok</option>
+                                                                    <option value="youtube">YouTube</option>
+                                                                    <option value="twitter">X (Twitter)</option>
+                                                                    <option value="linkedin">LinkedIn</option>
+                                                                    <option value="website">Site Web</option>
+                                                                </select>
+                                                                <input
+                                                                    value={link.url}
+                                                                    onChange={(e) => {
+                                                                        const newLinks = [...socialLinks];
+                                                                        newLinks[idx].url = e.target.value;
+                                                                        setSocialLinks(newLinks);
+                                                                    }}
+                                                                    className="flex-1 rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-sm focus:ring-primary focus:border-primary shadow-sm py-2"
+                                                                    placeholder="https://..."
+                                                                    type="url"
+                                                                />
+                                                                <button type="button" onClick={() => setSocialLinks(socialLinks.filter((_, i) => i !== idx))} className="text-red-500 hover:text-red-700 p-2">
+                                                                    <span className="material-symbols-outlined text-[20px]">delete</span>
+                                                                </button>
+                                                            </div>
+                                                        ))}
+                                                        {socialLinks.length === 0 && (
+                                                            <p className="text-xs text-slate-500 italic">Aucun lien social ajouté.</p>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex flex-col gap-2 border-t border-slate-100 dark:border-slate-700 pt-4">
+                                                    <div className="flex items-center justify-between">
+                                                        <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Vidéos Intégrées (Landing Page)</label>
+                                                        <button type="button" onClick={() => setVideos([...videos, { url: "" }])} className="text-xs text-primary hover:text-primary-dark font-medium flex items-center gap-1">
+                                                            <span className="material-symbols-outlined text-[16px]">add</span> Ajouter
+                                                        </button>
+                                                    </div>
+                                                    <div className="flex flex-col gap-3">
+                                                        {videos.map((video, idx) => (
+                                                            <div key={idx} className="flex items-center gap-2">
+                                                                <input
+                                                                    value={video.url}
+                                                                    onChange={(e) => {
+                                                                        const newVideos = [...videos];
+                                                                        newVideos[idx].url = e.target.value;
+                                                                        setVideos(newVideos);
+                                                                    }}
+                                                                    className="flex-1 rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-sm focus:ring-primary focus:border-primary shadow-sm py-2"
+                                                                    placeholder="URL d'intégration (ex: https://www.youtube.com/embed/...)"
+                                                                    type="url"
+                                                                />
+                                                                <button type="button" onClick={() => setVideos(videos.filter((_, i) => i !== idx))} className="text-red-500 hover:text-red-700 p-2">
+                                                                    <span className="material-symbols-outlined text-[20px]">delete</span>
+                                                                </button>
+                                                            </div>
+                                                        ))}
+                                                        {videos.length === 0 && (
+                                                            <p className="text-xs text-slate-500 italic">Aucune vidéo ajoutée.</p>
+                                                        )}
+                                                    </div>
+                                                    <p className="text-[10px] text-slate-400">Assurez-vous d'utiliser les liens "Embed" (intégration) fournis par YouTube, TikTok, etc.</p>
+                                                </div>
+
+                                                <div className="flex flex-col gap-2 border-t border-slate-100 dark:border-slate-700 pt-4">
+                                                    <div className="flex items-center justify-between">
+                                                        <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Caractéristiques (Features Section)</label>
+                                                        <button type="button" onClick={() => setFeatures([...features, { title: "", description: "", icon: "star" }])} className="text-xs text-primary hover:text-primary-dark font-medium flex items-center gap-1">
+                                                            <span className="material-symbols-outlined text-[16px]">add</span> Ajouter
+                                                        </button>
+                                                    </div>
+                                                    <div className="flex flex-col gap-4">
+                                                        {features.map((feature, idx) => (
+                                                            <div key={idx} className="flex flex-col gap-2 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 relative">
+                                                                <button type="button" onClick={() => setFeatures(features.filter((_, i) => i !== idx))} className="absolute top-2 right-2 text-red-500 hover:text-red-700">
+                                                                    <span className="material-symbols-outlined text-[18px]">close</span>
+                                                                </button>
+                                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pr-6">
+                                                                    <input
+                                                                        value={feature.title}
+                                                                        onChange={(e) => {
+                                                                            const newFeatures = [...features];
+                                                                            newFeatures[idx].title = e.target.value;
+                                                                            setFeatures(newFeatures);
+                                                                        }}
+                                                                        className="rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-sm focus:ring-primary focus:border-primary shadow-sm py-2"
+                                                                        placeholder="Titre de la caractéristique"
+                                                                        type="text"
+                                                                    />
+                                                                    <input
+                                                                        value={feature.icon}
+                                                                        onChange={(e) => {
+                                                                            const newFeatures = [...features];
+                                                                            newFeatures[idx].icon = e.target.value;
+                                                                            setFeatures(newFeatures);
+                                                                        }}
+                                                                        className="rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-sm focus:ring-primary focus:border-primary shadow-sm py-2"
+                                                                        placeholder="Nom de l'icône Material (ex: verified, star)"
+                                                                        type="text"
+                                                                    />
+                                                                </div>
+                                                                <textarea
+                                                                    value={feature.description}
+                                                                    onChange={(e) => {
+                                                                        const newFeatures = [...features];
+                                                                        newFeatures[idx].description = e.target.value;
+                                                                        setFeatures(newFeatures);
+                                                                    }}
+                                                                    className="rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-sm focus:ring-primary focus:border-primary w-full shadow-sm resize-none"
+                                                                    placeholder="Description courte de l'avantage..."
+                                                                    rows={2}
+                                                                ></textarea>
+                                                            </div>
+                                                        ))}
+                                                        {features.length === 0 && (
+                                                            <p className="text-xs text-slate-500 italic">Aucune caractéristique ajoutée.</p>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex flex-col gap-2 border-t border-slate-100 dark:border-slate-700 pt-4">
+                                                    <div className="flex items-center justify-between">
+                                                        <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Témoignages Clients (Testimonials Section)</label>
+                                                        <button type="button" onClick={() => setTestimonials([...testimonials, { name: "", role: "", content: "", rating: 5 }])} className="text-xs text-primary hover:text-primary-dark font-medium flex items-center gap-1">
+                                                            <span className="material-symbols-outlined text-[16px]">add</span> Ajouter
+                                                        </button>
+                                                    </div>
+                                                    <div className="flex flex-col gap-4">
+                                                        {testimonials.map((testi, idx) => (
+                                                            <div key={idx} className="flex flex-col gap-2 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 relative">
+                                                                <button type="button" onClick={() => setTestimonials(testimonials.filter((_, i) => i !== idx))} className="absolute top-2 right-2 text-red-500 hover:text-red-700">
+                                                                    <span className="material-symbols-outlined text-[18px]">close</span>
+                                                                </button>
+                                                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pr-6">
+                                                                    <input
+                                                                        value={testi.name}
+                                                                        onChange={(e) => {
+                                                                            const newTestis = [...testimonials];
+                                                                            newTestis[idx].name = e.target.value;
+                                                                            setTestimonials(newTestis);
+                                                                        }}
+                                                                        className="rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-sm focus:ring-primary focus:border-primary shadow-sm py-2"
+                                                                        placeholder="Nom du client"
+                                                                        type="text"
+                                                                    />
+                                                                    <input
+                                                                        value={testi.role}
+                                                                        onChange={(e) => {
+                                                                            const newTestis = [...testimonials];
+                                                                            newTestis[idx].role = e.target.value;
+                                                                            setTestimonials(newTestis);
+                                                                        }}
+                                                                        className="rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-sm focus:ring-primary focus:border-primary shadow-sm py-2"
+                                                                        placeholder="Rôle / Ville (Optionnel)"
+                                                                        type="text"
+                                                                    />
+                                                                    <select
+                                                                        value={testi.rating}
+                                                                        onChange={(e) => {
+                                                                            const newTestis = [...testimonials];
+                                                                            newTestis[idx].rating = parseInt(e.target.value);
+                                                                            setTestimonials(newTestis);
+                                                                        }}
+                                                                        className="rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-sm focus:ring-primary focus:border-primary shadow-sm py-2"
+                                                                    >
+                                                                        <option value={5}>5 Étoiles</option>
+                                                                        <option value={4}>4 Étoiles</option>
+                                                                        <option value={3}>3 Étoiles</option>
+                                                                        <option value={2}>2 Étoiles</option>
+                                                                        <option value={1}>1 Étoiles</option>
+                                                                    </select>
+                                                                </div>
+                                                                <textarea
+                                                                    value={testi.content}
+                                                                    onChange={(e) => {
+                                                                        const newTestis = [...testimonials];
+                                                                        newTestis[idx].content = e.target.value;
+                                                                        setTestimonials(newTestis);
+                                                                    }}
+                                                                    className="rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-sm focus:ring-primary focus:border-primary w-full shadow-sm resize-none"
+                                                                    placeholder="Avis du client..."
+                                                                    rows={2}
+                                                                ></textarea>
+                                                            </div>
+                                                        ))}
+                                                        {testimonials.length === 0 && (
+                                                            <p className="text-xs text-slate-500 italic">Aucun témoignage ajouté.</p>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex flex-col gap-2 border-t border-slate-100 dark:border-slate-700 pt-4">
                                                     <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Images du produit</label>
                                                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                                                         <div className="flex flex-col gap-2">
