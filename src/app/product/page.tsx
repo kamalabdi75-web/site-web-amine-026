@@ -80,15 +80,16 @@ function ProductCatalogContent() {
                 setIsLoading(true);
                 setError(null);
 
-                // Fetch Categories with nested subcategories
-                const { data: catData, error: catError } = await supabase.from("categories").select("*, subcategories(*)");
+                // Fetch Categories
+                const { data: catData, error: catError } = await supabase.from("categories").select("*");
                 if (catError) {
-                    throw new Error("Failed to load categories: " + catError.message);
+                    console.error("Failed to load categories:", catError);
+                } else {
+                    setCategories(catData || []);
                 }
-                setCategories(catData || []);
 
                 // Start building the query
-                let query = supabase.from("products").select("*, categories(name), subcategories(name)").order("id", { ascending: false });
+                let query = supabase.from("products").select("*, categories(name)").order("id", { ascending: false });
 
                 // If a category filter is applied, add the filter on category_id
                 if (categoryParam) {
@@ -231,9 +232,7 @@ function ProductCatalogContent() {
                                     <div className="p-5 flex flex-col flex-1 gap-2">
                                         <div className="flex items-center gap-1 text-slate-400 text-xs shadow-sm pb-1 mb-1 border-b border-slate-100 dark:border-slate-700 mt-auto">
                                             <span className="font-semibold">{product.brand || "ElectroMart"}</span>
-                                            {product.subcategories?.name ? (
-                                                <span className="ml-auto px-2 py-0.5 bg-slate-100 dark:bg-slate-700 rounded-lg">{product.subcategories.name}</span>
-                                            ) : product.categories?.name ? (
+                                            {product.categories?.name ? (
                                                 <span className="ml-auto px-2 py-0.5 bg-slate-100 dark:bg-slate-700 rounded-lg">{product.categories.name}</span>
                                             ) : null}
                                         </div>
