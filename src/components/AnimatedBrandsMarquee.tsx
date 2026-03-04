@@ -71,24 +71,29 @@ export default function AnimatedBrandsMarquee() {
             <div className="absolute left-0 top-0 bottom-0 w-16 md:w-32 bg-gradient-to-r from-white dark:from-slate-900 to-transparent z-10 pointer-events-none"></div>
             <div className="absolute right-0 top-0 bottom-0 w-16 md:w-32 bg-gradient-to-l from-white dark:from-slate-900 to-transparent z-10 pointer-events-none"></div>
 
-            <div className="flex overflow-hidden group">
-                <div className="animate-marquee flex gap-12 md:gap-24 items-center px-6">
+            <div className="flex overflow-hidden group py-4">
+                <div className="animate-marquee flex gap-16 md:gap-32 items-center px-8">
                     {marqueeContent.map((brand, idx) => (
                         <div
                             key={`${brand.id}-${idx}`}
-                            className="flex flex-col items-center justify-center transition-transform hover:scale-110 duration-300 drop-shadow-sm filter grayscale hover:grayscale-0"
+                            className="flex flex-col items-center justify-center gap-3 transition-transform hover:scale-110 duration-300 drop-shadow-sm filter grayscale hover:grayscale-0 shrink-0"
                             title={brand.name || "Marque Partenaire"}
                         >
                             <img
                                 src={brand.image_url}
                                 alt={brand.name || "Brand logo"}
                                 loading="lazy"
-                                className="object-contain mix-blend-multiply dark:mix-blend-normal"
+                                className="object-contain mix-blend-multiply dark:mix-blend-normal max-w-none"
                                 style={{
                                     width: `${brand.width}px`,
                                     height: `${brand.height}px`
                                 }}
                             />
+                            {brand.name && (
+                                <span className="text-sm font-medium text-slate-600 dark:text-slate-300">
+                                    {brand.name}
+                                </span>
+                            )}
                         </div>
                     ))}
                 </div>
