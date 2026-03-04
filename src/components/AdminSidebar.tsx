@@ -19,6 +19,7 @@ export default function AdminSidebar({ isMobileMenuOpen, setIsMobileMenuOpen }: 
         { label: 'Catégories', icon: 'category', href: '/admin/categories' },
         { label: 'Livraison', icon: 'local_shipping', href: '/admin/shipping' },
         { label: 'Communes', icon: 'map', href: '/admin/communes' },
+        { label: 'Marques', icon: 'loyalty', href: '/admin/brands' },
         { label: 'Paramètres', icon: 'settings', href: '/admin/settings' },
     ];
 
