@@ -36,12 +36,45 @@ export default function CategoriesAdminPage() {
     const [editingCat, setEditingCat] = useState<Category | null>(null);
     const [catName, setCatName] = useState("");
     const [catIcon, setCatIcon] = useState("");
+    const [catImage, setCatImage] = useState("");
+    const [isUploadingImage, setIsUploadingImage] = useState(false);
 
     // Form states for Subcategory
     const [showSubModal, setShowSubModal] = useState(false);
     const [editingSub, setEditingSub] = useState<Subcategory | null>(null);
     const [subName, setSubName] = useState("");
     const [subSlug, setSubSlug] = useState("");
+
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        if (file.size > 5 * 1024 * 1024) {
+            alert("L'image est trop volumineuse (Max 5MB).");
+            return;
+        }
+
+        setIsUploadingImage(true);
+        try {
+            const fileExt = file.name.split('.').pop();
+            const fileName = `category_${Date.now()}.${fileExt}`;
+            const filePath = `categories/${fileName}`;
+
+            const { error: uploadError } = await supabase.storage
+                .from("landing_media")
+                .upload(filePath, file, { cacheControl: '3600', upsert: false });
+
+            if (uploadError) throw uploadError;
+
+            const { data } = supabase.storage.from("landing_media").getPublicUrl(filePath);
+            setCatImage(data.publicUrl);
+        } catch (error: any) {
+            console.error("Upload error:", error);
+            alert("Erreur lors du téléchargement de l'image: " + error.message);
+        } finally {
+            setIsUploadingImage(false);
+        }
+    };
 
     const fetchCategories = async () => {
         try {
@@ -93,7 +126,8 @@ export default function CategoriesAdminPage() {
                     .update({
                         name: catName,
                         slug: catName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, ''),
-                        icon: catIcon
+                        icon: catIcon,
+                        image: catImage
                     })
                     .eq("id", editingCat.id);
                 if (error) throw error;
@@ -104,7 +138,7 @@ export default function CategoriesAdminPage() {
                         name: catName,
                         slug: catName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, ''),
                         icon: catIcon,
-                        image: '' // Fallback image if necessary, but empty should suffice if nullable or not enforced
+                        image: catImage
                     }]);
                 if (error) throw error;
             }
@@ -140,6 +174,7 @@ export default function CategoriesAdminPage() {
         setEditingCat(null);
         setCatName("");
         setCatIcon("category");
+        setCatImage("");
         setShowCatModal(true);
     };
 
@@ -148,6 +183,7 @@ export default function CategoriesAdminPage() {
         setEditingCat(cat);
         setCatName(cat.name);
         setCatIcon(cat.icon || "");
+        setCatImage(cat.image || "");
         setShowCatModal(true);
     };
 
@@ -252,7 +288,13 @@ export default function CategoriesAdminPage() {
                                         className={`group w-full text-left px-4 py-3 rounded-lg flex items-center justify-between transition-colors cursor-pointer ${selectedCategory?.id === cat.id ? 'bg-primary/10 text-primary font-bold' : 'text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-700'}`}
                                     >
                                         <div className="flex items-center gap-3">
-                                            {cat.icon && <span className="material-symbols-outlined text-[20px]">{cat.icon}</span>}
+                                            {cat.image ? (
+                                                <img src={cat.image} alt={cat.name} className="size-8 object-cover rounded-md bg-white border border-slate-200" />
+                                            ) : cat.icon ? (
+                                                <span className="material-symbols-outlined text-[20px]">{cat.icon}</span>
+                                            ) : (
+                                                <span className="material-symbols-outlined text-[20px] text-slate-300">image</span>
+                                            )}
                                             <span className="text-sm">{cat.name}</span>
                                         </div>
                                         <div className="flex items-center gap-1 transition-opacity">
@@ -395,6 +437,38 @@ export default function CategoriesAdminPage() {
                                     className="w-full rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-sm focus:ring-primary focus:border-primary p-2.5"
                                     placeholder="ex: Électroménager"
                                 />
+                            </div>
+
+                            <div className="mb-4">
+                                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Image de la Catégorie (Optionnel)</label>
+                                <div className="flex items-center gap-4">
+                                    {catImage ? (
+                                        <div className="relative size-16 shrink-0 rounded-lg bg-slate-100 overflow-hidden border border-slate-200">
+                                            <img src={catImage} alt="Preview" className="w-full h-full object-cover" />
+                                            <button type="button" onClick={() => setCatImage("")} className="absolute -top-1 -right-1 bg-red-500 hover:bg-red-600 text-white rounded-full size-6 flex items-center justify-center text-xs shadow-md transition-colors"><span className="material-symbols-outlined text-[14px]">close</span></button>
+                                        </div>
+                                    ) : (
+                                        <div className="size-16 shrink-0 rounded-lg bg-slate-100 dark:bg-slate-900 border border-dashed border-slate-300 dark:border-slate-700 flex items-center justify-center text-slate-400">
+                                            <span className="material-symbols-outlined text-[24px]">image</span>
+                                        </div>
+                                    )}
+                                    <div className="flex-1">
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={handleImageUpload}
+                                            disabled={isUploadingImage}
+                                            className="block w-full text-sm text-slate-500
+                                              file:mr-4 file:py-2 file:px-4
+                                              file:rounded-lg file:border-0
+                                              file:text-sm file:font-semibold
+                                              file:bg-primary/10 file:text-primary
+                                              hover:file:bg-primary/20
+                                              disabled:opacity-50"
+                                        />
+                                        {isUploadingImage && <p className="text-xs text-primary mt-1 animate-pulse">Téléchargement en cours...</p>}
+                                    </div>
+                                </div>
                             </div>
 
                             <div className="mb-6">
