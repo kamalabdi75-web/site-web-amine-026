@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import HomeHeader from "@/components/HomeHeader";
 import HomeFooter from "@/components/HomeFooter";
+import BrandMarquee from "@/components/BrandMarquee";
 import { supabase } from "@/lib/supabase";
 
 export default async function Home() {
@@ -46,6 +47,12 @@ export default async function Home() {
               </div>
             </div>
           </div>
+        </section>
+
+        {/* Brand Marquee Section */}
+        <section className="-mx-4 lg:-mx-10 overflow-hidden">
+          {/* @ts-ignore */}
+          <BrandMarquee />
         </section>
 
         <section>
