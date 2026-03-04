@@ -8,13 +8,29 @@ import Link from "next/link";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import EditProductButton from "./EditProductButton";
 import RecentProducts from "./RecentProducts";
-import DOMPurify from 'isomorphic-dompurify';
+import sanitizeHtml from 'sanitize-html';
 import SocialLinks from "@/components/SocialLinks";
 import VideoGallery from "@/components/VideoGallery";
 import LandingFeatures from "@/components/LandingFeatures";
 import LandingTestimonials from "@/components/LandingTestimonials";
 
+
 export const dynamic = 'force-dynamic'; // Force real-time fetching to prevent stale cache on mobile/desktop
+
+const sanitizeOptions = {
+    allowedTags: sanitizeHtml.defaults.allowedTags.concat([
+        'iframe', 'video', 'source', 'img', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'span', 'u', 's', 'em', 'strong'
+    ]),
+    allowedAttributes: {
+        ...sanitizeHtml.defaults.allowedAttributes,
+        '*': ['style', 'class', 'dir', 'align'],
+        'iframe': ['src', 'allow', 'allowfullscreen', 'frameborder', 'scrolling', 'title', 'width', 'height'],
+        'video': ['src', 'controls', 'width', 'height', 'autoplay', 'loop', 'muted', 'poster', 'playsinline'],
+        'source': ['src', 'type'],
+        'img': ['src', 'alt', 'width', 'height', 'loading']
+    },
+    allowedIframeHostnames: ['www.youtube.com', 'youtube.com', 'player.vimeo.com', 'vimeo.com']
+};
 
 export default async function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
@@ -124,10 +140,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
                                 {product.description ? (
                                     <div
                                         dangerouslySetInnerHTML={{
-                                            __html: DOMPurify.sanitize(product.description, {
-                                                ADD_TAGS: ['iframe', 'video', 'source'],
-                                                ADD_ATTR: ['allow', 'allowfullscreen', 'frameborder', 'scrolling', 'controls', 'target']
-                                            })
+                                            __html: sanitizeHtml(product.description, sanitizeOptions)
                                         }}
                                     />
                                 ) : (
@@ -164,10 +177,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
                                 <div
                                     className="prose prose-lg dark:prose-invert max-w-none w-full break-words prose-headings:font-display prose-headings:font-bold prose-a:text-primary hover:prose-a:text-primary-dark prose-img:rounded-2xl prose-img:shadow-md prose-video:w-full prose-video:aspect-video [&_iframe]:w-full [&_iframe]:aspect-video [&_iframe]:rounded-2xl overflow-x-hidden"
                                     dangerouslySetInnerHTML={{
-                                        __html: DOMPurify.sanitize(product.landing_content, {
-                                            ADD_TAGS: ['iframe', 'video', 'source'],
-                                            ADD_ATTR: ['allow', 'allowfullscreen', 'frameborder', 'scrolling', 'controls', 'target']
-                                        })
+                                        __html: sanitizeHtml(product.landing_content, sanitizeOptions)
                                     }}
                                 />
                             </div>
