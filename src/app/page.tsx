@@ -2,8 +2,8 @@ import Image from "next/image";
 import Link from "next/link";
 import HomeHeader from "@/components/HomeHeader";
 import HomeFooter from "@/components/HomeFooter";
-import BrandMarquee from "@/components/BrandMarquee";
 import { supabase } from "@/lib/supabase";
+import AnimatedBrandsMarquee from "@/components/AnimatedBrandsMarquee";
 
 export default async function Home() {
   // Select only columns needed for the product card — avoids sending `landing_content`, `specifications`, etc.
@@ -49,11 +49,8 @@ export default async function Home() {
           </div>
         </section>
 
-        {/* Brand Marquee Section */}
-        <section className="-mx-4 lg:-mx-10 overflow-hidden">
-          {/* @ts-ignore */}
-          <BrandMarquee />
-        </section>
+        {/* --- ANIMATED BRANDS MARQUEE SECTION --- */}
+        <AnimatedBrandsMarquee />
 
         <section>
           <div className="flex items-center justify-between mb-6">

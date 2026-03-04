@@ -1,279 +1,298 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import Image from "next/image";
-import AdminMediaUpload from "@/components/AdminMediaUpload";
+import { useState, useEffect, useRef } from "react";
+import AdminSidebar from "@/components/AdminSidebar";
+import { supabase } from "@/lib/supabase";
 
 interface Brand {
     id: string;
-    name: string;
+    name: string | null;
     image_url: string;
-    order_index: number;
-}
-
-interface Settings {
-    brand_marquee_height: number;
-    brand_marquee_speed: number;
+    width: number;
+    height: number;
+    created_at: string;
 }
 
 export default function AdminBrandsPage() {
     const [brands, setBrands] = useState<Brand[]>([]);
-    const [settings, setSettings] = useState<Settings>({ brand_marquee_height: 80, brand_marquee_speed: 30 });
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-    // For the "Add new brand" form
-    const [newBrandMedia, setNewBrandMedia] = useState<any[]>([]);
-    const [newBrandName, setNewBrandName] = useState("");
+    // Form State
+    const [name, setName] = useState("");
+    const [imageUrl, setImageUrl] = useState("");
+    const [width, setWidth] = useState(120);
+    const [height, setHeight] = useState(60);
+
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
-        fetchData();
+        fetchBrands();
     }, []);
 
-    const fetchData = async () => {
+    const fetchBrands = async () => {
+        setIsLoading(true);
         try {
-            const res = await fetch('/api/admin/settings/brands');
+            const res = await fetch('/api/admin/brands');
             if (res.ok) {
                 const data = await res.json();
-                if (data.settings) setSettings(data.settings);
-                if (data.brands) setBrands(data.brands);
+                setBrands(data.brands || []);
             }
         } catch (error) {
-            console.error("Error fetching data:", error);
+            console.error("Error fetching brands", error);
         } finally {
             setIsLoading(false);
         }
     };
 
-    const handleSaveSettings = async () => {
-        setIsSaving(true);
+    const handleUploadClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        if (file.size > 5 * 1024 * 1024) {
+            alert("L'image est trop grande (Max 5MB).");
+            return;
+        }
+
+        setIsUploading(true);
         try {
-            const res = await fetch('/api/admin/settings/brands', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    action: 'update_settings',
-                    payload: settings
-                })
-            });
-            if (res.ok) {
-                alert("Paramètres enregistrés avec succès !");
-            } else {
-                throw new Error("Failed to save settings");
+            const timestamp = Date.now();
+            const ext = file.name.split('.').pop();
+            const fileName = `brand_${timestamp}_${Math.random().toString(36).substring(7)}.${ext}`;
+            const filePath = `landing/${fileName}`;
+
+            const { error: uploadError } = await supabase.storage
+                .from("landing_media") // reuse the bucket created previously
+                .upload(filePath, file, { cacheControl: '3600', upsert: false });
+
+            if (uploadError) throw uploadError;
+
+            const { data } = supabase.storage
+                .from("landing_media")
+                .getPublicUrl(filePath);
+
+            setImageUrl(data.publicUrl);
+            // Try to guess name from filename
+            if (!name) {
+                setName(file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " "));
             }
-        } catch (error) {
-            console.error(error);
-            alert("Erreur lors de l'enregistrement des paramètres.");
+
+        } catch (err: any) {
+            console.error("Upload error:", err);
+            alert("Erreur lors du téléchargement de l'image.");
         } finally {
-            setIsSaving(false);
+            setIsUploading(false);
+            if (fileInputRef.current) fileInputRef.current.value = '';
         }
     };
 
-    const handleAddBrand = async () => {
-        if (!newBrandName || newBrandMedia.length === 0) {
-            alert("Veuillez entrer un nom et uploader un logo.");
+    const handleAddBrand = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!imageUrl) {
+            alert("Veuillez télécharger une image.");
             return;
         }
 
         setIsSaving(true);
         try {
-            const res = await fetch('/api/admin/settings/brands', {
+            const res = await fetch('/api/admin/brands', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    action: 'add_brand',
-                    payload: {
-                        name: newBrandName,
-                        image_url: newBrandMedia[0].url,
-                        order_index: brands.length
-                    }
-                })
+                body: JSON.stringify({ name, image_url: imageUrl, width, height })
             });
 
-            if (res.ok) {
-                setNewBrandName("");
-                setNewBrandMedia([]);
-                fetchData(); // Refresh list
-            } else {
-                throw new Error("Failed to add brand");
-            }
+            if (!res.ok) throw new Error("Failed to save brand");
+
+            // Reset form and refresh list
+            setName("");
+            setImageUrl("");
+            setWidth(120);
+            setHeight(60);
+            fetchBrands();
         } catch (error) {
-            console.error(error);
-            alert("Erreur lors de l'ajout de la marque.");
+            console.error("Error saving brand", error);
+            alert("Erreur lors de l'enregistrement de la marque.");
         } finally {
             setIsSaving(false);
         }
     };
 
-    const handleDeleteBrand = async (id: string) => {
-        if (!confirm("Êtes-vous sûr de vouloir supprimer cette marque ?")) return;
+    const handleDelete = async (id: string) => {
+        if (!confirm("Voulez-vous vraiment supprimer cette marque ?")) return;
 
         try {
-            const res = await fetch('/api/admin/settings/brands', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    action: 'delete_brand',
-                    payload: { id }
-                })
+            const res = await fetch(`/api/admin/brands?id=${id}`, {
+                method: 'DELETE',
             });
-
             if (res.ok) {
-                fetchData();
+                fetchBrands();
             } else {
                 throw new Error("Failed to delete brand");
             }
         } catch (error) {
-            console.error(error);
+            console.error("Error deleting brand", error);
             alert("Erreur lors de la suppression.");
         }
     };
 
-
-    if (isLoading) return <div className="p-8 flex justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>;
-
     return (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-                <div>
-                    <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white">Gestion des Marques (Marquee)</h1>
-                    <p className="text-slate-500 mt-1">Gérez le bandeau défilant des marques sur la page d'accueil.</p>
-                </div>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
-                {/* Left Column: Settings & Add New */}
-                <div className="lg:col-span-1 space-y-8">
-
-                    {/* Settings Panel */}
-                    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
-                        <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Paramètres du Bandeau</h2>
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                                    Hauteur du bandeau (px)
-                                </label>
-                                <input
-                                    type="number"
-                                    className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
-                                    value={settings.brand_marquee_height}
-                                    onChange={(e) => setSettings({ ...settings, brand_marquee_height: Number(e.target.value) })}
-                                />
-                                <p className="text-xs text-slate-500 mt-1">Exemple: 80 pour un petit bandeau, 120 pour un grand.</p>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                                    Vitesse de défilement (secondes)
-                                </label>
-                                <input
-                                    type="number"
-                                    className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
-                                    value={settings.brand_marquee_speed}
-                                    onChange={(e) => setSettings({ ...settings, brand_marquee_speed: Number(e.target.value) })}
-                                />
-                                <p className="text-xs text-slate-500 mt-1">Plus le nombre est grand, plus le défilement est lent (ex: 30).</p>
-                            </div>
-                            <button
-                                onClick={handleSaveSettings}
-                                disabled={isSaving}
-                                className="w-full bg-slate-900 dark:bg-slate-700 hover:bg-slate-800 dark:hover:bg-slate-600 text-white font-medium py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2"
-                            >
-                                {isSaving ? <span className="animate-spin h-5 w-5 border-2 border-white/20 border-t-white rounded-full"></span> : <span className="material-symbols-outlined text-[20px]">save</span>}
-                                Enregistrer les paramètres
+        <div className="flex h-screen bg-slate-50 dark:bg-slate-900 overflow-hidden font-sans">
+            <AdminSidebar isMobileMenuOpen={isMobileMenuOpen} setIsMobileMenuOpen={setIsMobileMenuOpen} />
+            <div className="flex-1 flex flex-col h-screen overflow-hidden">
+                <main className="flex-1 overflow-y-auto w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                    <header className="mb-8 flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <button className="xl:hidden p-2 -ml-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition-colors" onClick={() => setIsMobileMenuOpen(true)}>
+                                <span className="material-symbols-outlined">menu</span>
                             </button>
-                        </div>
-                    </div>
-
-                    {/* Add Brand Panel */}
-                    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
-                        <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Ajouter une Marque</h2>
-                        <div className="space-y-4">
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                                    Nom de la marque
-                                </label>
-                                <input
-                                    type="text"
-                                    className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
-                                    placeholder="Ex: Samsung, LG..."
-                                    value={newBrandName}
-                                    onChange={(e) => setNewBrandName(e.target.value)}
-                                />
+                                <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white mb-2">Marques Partenaires</h1>
+                                <p className="text-slate-600 dark:text-slate-400">Gérez les logos des marques affichés dans le carrousel sur la page d'accueil.</p>
                             </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                    Logo (Image transparente recommandée)
-                                </label>
-                                {/* Reusing the MediaUpload component */}
-                                <AdminMediaUpload
-                                    media={newBrandMedia}
-                                    onChange={(media: any[]) => {
-                                        // Keep only the last uploaded image (max 1 logo)
-                                        setNewBrandMedia(media.slice(-1));
-                                    }}
-                                />
-                            </div>
-
-                            <button
-                                onClick={handleAddBrand}
-                                disabled={isSaving || !newBrandName || newBrandMedia.length === 0}
-                                className="w-full bg-primary hover:bg-primary-dark disabled:bg-primary/50 text-white font-medium py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2"
-                            >
-                                {isSaving ? <span className="animate-spin h-5 w-5 border-2 border-white/20 border-t-white rounded-full"></span> : <span className="material-symbols-outlined text-[20px]">add_circle</span>}
-                                Ajouter la marque
-                            </button>
                         </div>
-                    </div>
+                    </header>
 
-                </div>
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        {/* Add Brand Form */}
+                        <div className="lg:col-span-1">
+                            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+                                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6">Ajouter une marque</h2>
+                                <form onSubmit={handleAddBrand} className="flex flex-col gap-5">
 
-                {/* Right Column: Brands List */}
-                <div className="lg:col-span-2">
-                    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
-                        <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
-                            <h2 className="text-lg font-bold text-slate-900 dark:text-white">Marques actuelles ({brands.length})</h2>
-                        </div>
-
-                        {brands.length === 0 ? (
-                            <div className="p-12 text-center text-slate-500">
-                                <span className="material-symbols-outlined text-4xl mb-2 opacity-50">imagesmode</span>
-                                <p>Aucune marque ajoutée pour le moment.</p>
-                                <p className="text-sm mt-1">Utilisez le formulaire à gauche pour ajouter vos premiers logos.</p>
-                            </div>
-                        ) : (
-                            <div className="divide-y divide-slate-200 dark:divide-slate-700">
-                                {brands.map((brand) => (
-                                    <div key={brand.id} className="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-24 h-16 bg-white border border-slate-200 dark:border-slate-700 rounded-lg flex items-center justify-center overflow-hidden p-2 relative">
-                                                {/* Use img instead of Next Image for external user uploads without hostname config */}
-                                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                                <img
-                                                    src={brand.image_url}
-                                                    alt={brand.name}
-                                                    className="max-w-full max-h-full object-contain mix-blend-multiply dark:mix-blend-normal"
-                                                />
-                                            </div>
-                                            <div>
-                                                <h3 className="font-bold text-slate-900 dark:text-white">{brand.name}</h3>
-                                            </div>
-                                        </div>
-                                        <button
-                                            onClick={() => handleDeleteBrand(brand.id)}
-                                            className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
-                                            title="Supprimer"
+                                    <div>
+                                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Logo de la marque</label>
+                                        <div
+                                            onClick={handleUploadClick}
+                                            className={`w-full h-32 border-2 border-dashed rounded-xl flex flex-col items-center justify-center cursor-pointer transition-colors ${imageUrl ? 'border-primary bg-primary/5' : 'border-slate-300 dark:border-slate-600 hover:border-primary/50 bg-slate-50 dark:bg-slate-900/50'}`}
                                         >
-                                            <span className="material-symbols-outlined text-[20px]">delete</span>
-                                        </button>
+                                            {isUploading ? (
+                                                <span className="material-symbols-outlined animate-spin text-slate-400 text-3xl">autorenew</span>
+                                            ) : imageUrl ? (
+                                                <div className="w-full h-full p-2 flex items-center justify-center">
+                                                    <img src={imageUrl} alt="Aperçu" className="max-w-full max-h-full object-contain mix-blend-multiply dark:mix-blend-normal" style={{ width: width + 'px', height: height + 'px' }} />
+                                                </div>
+                                            ) : (
+                                                <>
+                                                    <span className="material-symbols-outlined text-slate-400 text-3xl mb-2">add_photo_alternate</span>
+                                                    <span className="text-sm text-slate-500 font-medium">Cliquez pour ajouter</span>
+                                                </>
+                                            )}
+                                        </div>
+                                        <input
+                                            type="file"
+                                            ref={fileInputRef}
+                                            className="hidden"
+                                            accept=".png,.jpg,.jpeg,.webp,.svg"
+                                            onChange={handleFileChange}
+                                        />
+                                        {imageUrl && (
+                                            <button
+                                                type="button"
+                                                onClick={() => setImageUrl("")}
+                                                className="mt-2 text-xs text-red-500 hover:text-red-700 font-medium"
+                                            >
+                                                Retirer l'image
+                                            </button>
+                                        )}
                                     </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                </div>
 
+                                    <div>
+                                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Nom (Optionnel)</label>
+                                        <input
+                                            type="text"
+                                            value={name}
+                                            onChange={(e) => setName(e.target.value)}
+                                            placeholder="Ex: Samsung"
+                                            className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
+                                        />
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Largeur (px)</label>
+                                            <input
+                                                type="number"
+                                                value={width}
+                                                onChange={(e) => setWidth(Number(e.target.value))}
+                                                className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Hauteur (px)</label>
+                                            <input
+                                                type="number"
+                                                value={height}
+                                                onChange={(e) => setHeight(Number(e.target.value))}
+                                                className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <button
+                                        type="submit"
+                                        disabled={!imageUrl || isSaving || isUploading}
+                                        className="mt-2 w-full bg-primary hover:bg-primary-dark text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-primary/30 transition-all flex justify-center items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        {isSaving ? <span className="material-symbols-outlined animate-spin text-xl">autorenew</span> : <span className="material-symbols-outlined text-xl">save</span>}
+                                        {isSaving ? "Enregistrement..." : "Ajouter la marque"}
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+
+                        {/* Brands List */}
+                        <div className="lg:col-span-2">
+                            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+                                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6">Marques enregistrées ({brands.length})</h2>
+
+                                {isLoading ? (
+                                    <div className="flex flex-col items-center justify-center py-12 text-slate-400">
+                                        <span className="material-symbols-outlined animate-spin text-4xl mb-4">autorenew</span>
+                                        <p>Chargement des marques...</p>
+                                    </div>
+                                ) : brands.length === 0 ? (
+                                    <div className="text-center py-12 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-dashed border-slate-300 dark:border-slate-700">
+                                        <span className="material-symbols-outlined text-4xl text-slate-400 mb-2">loyalty</span>
+                                        <p className="text-slate-500 font-medium">Aucune marque n'a été ajoutée pour le moment.</p>
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                                        {brands.map(brand => (
+                                            <div key={brand.id} className="group relative bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-4 flex flex-col items-center justify-between shadow-sm">
+                                                <div className="h-20 w-full flex items-center justify-center mb-3">
+                                                    <img
+                                                        src={brand.image_url}
+                                                        alt={brand.name || "Brand logo"}
+                                                        className="max-w-full max-h-full object-contain mix-blend-multiply dark:mix-blend-normal"
+                                                        style={{ width: `${brand.width}px`, height: `${brand.height}px` }}
+                                                    />
+                                                </div>
+                                                <div className="w-full text-center border-t border-slate-200 dark:border-slate-800 pt-3">
+                                                    <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate">{brand.name || "Sans nom"}</p>
+                                                    <p className="text-[10px] text-slate-500">{brand.width}x{brand.height}px</p>
+                                                </div>
+
+                                                <button
+                                                    onClick={() => handleDelete(brand.id)}
+                                                    className="absolute -top-2 -right-2 bg-red-500 text-white p-1.5 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 hover:scale-110"
+                                                    title="Supprimer la marque"
+                                                >
+                                                    <span className="material-symbols-outlined text-[14px]">close</span>
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </main>
             </div>
         </div>
     );
