@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
 interface AddToCartActionProps {
@@ -10,8 +11,10 @@ interface AddToCartActionProps {
 }
 
 export default function AddToCartAction({ productId, stock, price }: AddToCartActionProps) {
+    const router = useRouter();
     const [quantity, setQuantity] = useState(1);
     const [isAdding, setIsAdding] = useState(false);
+    const [isBuyingNow, setIsBuyingNow] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
 
     const handleAddToCart = async () => {
@@ -104,7 +107,7 @@ export default function AddToCartAction({ productId, stock, price }: AddToCartAc
             <div className="flex flex-col sm:flex-row gap-4">
                 <button
                     onClick={handleAddToCart}
-                    disabled={isAdding}
+                    disabled={isAdding || isBuyingNow}
                     className={`flex-1 py-5 px-6 font-bold rounded-2xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary/10 ${showSuccess ? 'bg-green-500 text-white' : 'bg-primary text-white hover:bg-primary-dark active:scale-[0.98]'}`}
                 >
                     {isAdding ? (
@@ -118,16 +121,23 @@ export default function AddToCartAction({ productId, stock, price }: AddToCartAc
                 </button>
                 <button
                     onClick={async () => {
+                        setIsBuyingNow(true);
                         const success = await handleAddToCart();
                         if (success) {
-                            window.location.href = '/checkout';
+                            router.push('/checkout');
+                        } else {
+                            setIsBuyingNow(false);
                         }
                     }}
-                    disabled={isAdding}
-                    className="flex-1 py-5 px-6 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold rounded-2xl hover:bg-slate-800 dark:hover:bg-slate-100 transition-all active:scale-[0.98] shadow-lg shadow-slate-900/10 flex items-center justify-center gap-2"
+                    disabled={isAdding || isBuyingNow}
+                    className="flex-1 py-5 px-6 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold rounded-2xl hover:bg-slate-800 dark:hover:bg-slate-100 transition-all active:scale-[0.98] shadow-lg shadow-slate-900/10 flex items-center justify-center gap-2 disabled:opacity-70 disabled:active:scale-100"
                 >
-                    <span className="material-symbols-outlined text-[22px]">flash_on</span>
-                    <span className="text-lg">Acheter maintenant</span>
+                    {isBuyingNow ? (
+                        <span className="material-symbols-outlined animate-spin text-[22px]">refresh</span>
+                    ) : (
+                        <span className="material-symbols-outlined text-[22px]">flash_on</span>
+                    )}
+                    <span className="text-lg">{isBuyingNow ? 'Redirection...' : 'Acheter maintenant'}</span>
                 </button>
             </div>
         </div>
