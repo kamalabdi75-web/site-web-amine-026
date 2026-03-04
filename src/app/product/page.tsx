@@ -81,7 +81,7 @@ function ProductCatalogContent() {
                 setError(null);
 
                 // Fetch Categories
-                const { data: catData, error: catError } = await supabase.from("categories").select("*");
+                const { data: catData, error: catError } = await supabase.from("categories").select("*").order("order_index", { ascending: true });
                 if (catError) {
                     console.error("Failed to load categories:", catError);
                 } else {

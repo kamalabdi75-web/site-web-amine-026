@@ -19,7 +19,7 @@ export default function MobileMenu() {
                 const { data, error } = await supabase
                     .from("categories")
                     .select("*, subcategories(*)")
-                    .order("created_at", { ascending: true });
+                    .order("order_index", { ascending: true });
 
                 if (data && !error && data.length > 0) {
                     setCategories(data);

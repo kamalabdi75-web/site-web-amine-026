@@ -20,6 +20,7 @@ type Category = {
     link: string;
     image: string;
     icon: string;
+    order_index?: number;
 };
 
 export default function CategoriesAdminPage() {
@@ -78,7 +79,7 @@ export default function CategoriesAdminPage() {
 
     const fetchCategories = async () => {
         try {
-            const { data, error } = await supabase.from("categories").select("*").order("name");
+            const { data, error } = await supabase.from("categories").select("*").order("order_index", { ascending: true });
             if (!error && data) {
                 setCategories(data);
                 if (data.length > 0 && !selectedCategory) {
@@ -146,10 +147,38 @@ export default function CategoriesAdminPage() {
             setEditingCat(null);
             setCatName("");
             setCatIcon("");
+            setCatImage("");
             fetchCategories();
         } catch (error) {
             console.error(error);
             alert("Erreur lors de l'enregistrement de la catégorie: " + (error as any).message);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleMoveCategory = async (cat: Category, index: number, direction: 'up' | 'down', e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (direction === 'up' && index === 0) return;
+        if (direction === 'down' && index === categories.length - 1) return;
+
+        setIsLoading(true);
+        const targetIndex = direction === 'up' ? index - 1 : index + 1;
+        const targetCat = categories[targetIndex];
+
+        // Ensure order_index defaults nicely
+        const currentOrder = cat.order_index ?? index;
+        const targetOrder = targetCat.order_index ?? targetIndex;
+
+        try {
+            await Promise.all([
+                supabase.from("categories").update({ order_index: targetOrder }).eq("id", cat.id),
+                supabase.from("categories").update({ order_index: currentOrder }).eq("id", targetCat.id)
+            ]);
+            await fetchCategories();
+        } catch (error) {
+            console.error("Error swapping categories:", error);
+            alert("Error updating order");
         } finally {
             setIsLoading(false);
         }
@@ -281,7 +310,7 @@ export default function CategoriesAdminPage() {
                                 </button>
                             </div>
                             <div className="flex-1 overflow-y-auto p-2">
-                                {categories.map(cat => (
+                                {categories.map((cat, index) => (
                                     <div
                                         key={cat.id}
                                         onClick={() => setSelectedCategory(cat)}
@@ -298,7 +327,14 @@ export default function CategoriesAdminPage() {
                                             <span className="text-sm">{cat.name}</span>
                                         </div>
                                         <div className="flex items-center gap-1 transition-opacity">
-                                            <button onClick={(e) => openEditCatModal(cat, e)} className="p-1.5 text-slate-400 hover:text-primary transition-colors rounded-lg hover:bg-primary/10">
+                                            <button onClick={(e) => handleMoveCategory(cat as any, index, 'up', e)} disabled={index === 0 || isLoading} className="p-1.5 text-slate-400 hover:text-primary transition-colors rounded-lg hover:bg-primary/10 disabled:opacity-30 disabled:hover:bg-transparent">
+                                                <span className="material-symbols-outlined text-[16px]">keyboard_arrow_up</span>
+                                            </button>
+                                            <button onClick={(e) => handleMoveCategory(cat as any, index, 'down', e)} disabled={index === categories.length - 1 || isLoading} className="p-1.5 text-slate-400 hover:text-primary transition-colors rounded-lg hover:bg-primary/10 disabled:opacity-30 disabled:hover:bg-transparent">
+                                                <span className="material-symbols-outlined text-[16px]">keyboard_arrow_down</span>
+                                            </button>
+                                            <div className="w-[1px] h-4 bg-slate-200 dark:bg-slate-700 mx-1 block"></div>
+                                            <button onClick={(e) => openEditCatModal(cat as any, e)} className="p-1.5 text-slate-400 hover:text-primary transition-colors rounded-lg hover:bg-primary/10">
                                                 <span className="material-symbols-outlined text-[16px]">edit</span>
                                             </button>
                                             <button onClick={(e) => { e.stopPropagation(); handleDeleteCategory(cat.id, cat.name); }} className="p-1.5 text-slate-400 hover:text-red-500 transition-colors rounded-lg hover:bg-red-50">
