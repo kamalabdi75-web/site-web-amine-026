@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useSettings, WebsiteSettings } from "@/context/SettingsContext";
 import AdminSidebar from "@/components/AdminSidebar";
+import { FONT_OPTIONS } from "@/components/ThemeInjector";
 
 export default function AdminSettingsPage() {
     const { settings, refreshSettings } = useSettings();
@@ -34,6 +35,8 @@ export default function AdminSettingsPage() {
     const [socialTiktok, setSocialTiktok] = useState<string>("");
     const [socialYoutube, setSocialYoutube] = useState<string>("");
     const [socialTwitter, setSocialTwitter] = useState<string>("");
+    const [themePrimaryColor, setThemePrimaryColor] = useState<string>("#FF6B00");
+    const [themeFontFamily, setThemeFontFamily] = useState<string>("Inter");
 
     const [uploading, setUploading] = useState(false);
     const [successMessage, setSuccessMessage] = useState("");
@@ -62,6 +65,8 @@ export default function AdminSettingsPage() {
             setSocialTiktok(settings.social_tiktok || "");
             setSocialYoutube(settings.social_youtube || "");
             setSocialTwitter(settings.social_twitter || "");
+            setThemePrimaryColor(settings.theme_primary_color || "#FF6B00");
+            setThemeFontFamily(settings.theme_font_family || "Inter");
         }
     }, [settings]);
 
@@ -127,6 +132,8 @@ export default function AdminSettingsPage() {
                 social_tiktok: socialTiktok || null,
                 social_youtube: socialYoutube || null,
                 social_twitter: socialTwitter || null,
+                theme_primary_color: themePrimaryColor,
+                theme_font_family: themeFontFamily,
                 updated_at: new Date().toISOString(),
             };
 
@@ -550,6 +557,69 @@ export default function AdminSettingsPage() {
                                                     </div>
                                                 </div>
                                             </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Theme Colors & Font Section */}
+                                <div className="pt-8 border-t border-slate-200 dark:border-slate-700">
+                                    <div className="mb-6">
+                                        <h2 className="text-lg font-bold text-slate-900 dark:text-white">🎨 Thème &amp; Apparence</h2>
+                                        <p className="text-sm text-slate-500 mt-1">Personnalisez la couleur principale et la police du site.</p>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        {/* Color Picker */}
+                                        <div>
+                                            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">Couleur principale</label>
+                                            <div className="flex items-center gap-4">
+                                                <div className="relative">
+                                                    <input
+                                                        type="color"
+                                                        value={themePrimaryColor}
+                                                        onChange={(e) => setThemePrimaryColor(e.target.value)}
+                                                        className="w-16 h-12 rounded-xl cursor-pointer border-2 border-slate-200 dark:border-slate-700 bg-transparent p-0.5"
+                                                    />
+                                                </div>
+                                                <div className="flex-1">
+                                                    <div className="flex items-center gap-2 p-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900">
+                                                        <div className="w-5 h-5 rounded-md shrink-0" style={{ backgroundColor: themePrimaryColor }} />
+                                                        <span className="text-sm font-mono text-slate-600 dark:text-slate-400">{themePrimaryColor}</span>
+                                                    </div>
+                                                    {/* Quick presets */}
+                                                    <div className="flex gap-2 mt-2 flex-wrap">
+                                                        {['#FF6B00', '#E11D48', '#7C3AED', '#2563EB', '#059669', '#D97706', '#0F172A', '#64748B'].map(c => (
+                                                            <button key={c} type="button" onClick={() => setThemePrimaryColor(c)}
+                                                                className={`w-7 h-7 rounded-full border-2 transition-all hover:scale-110 ${themePrimaryColor === c ? 'border-slate-900 dark:border-white scale-110' : 'border-transparent'}`}
+                                                                style={{ backgroundColor: c }} title={c}
+                                                            />
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <p className="text-xs text-slate-500 mt-2">Change la couleur de tous les boutons, liens et éléments actifs du site.</p>
+                                        </div>
+                                        {/* Font Picker */}
+                                        <div>
+                                            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">Police de caractères</label>
+                                            <div className="space-y-2">
+                                                <select
+                                                    value={themeFontFamily}
+                                                    onChange={(e) => setThemeFontFamily(e.target.value)}
+                                                    className="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-4 py-2.5 text-sm focus:ring-primary focus:border-primary"
+                                                >
+                                                    {FONT_OPTIONS.map(f => (
+                                                        <option key={f.value} value={f.value}>{f.label}</option>
+                                                    ))}
+                                                </select>
+                                                {/* Preview */}
+                                                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
+                                                    <p className="text-xs text-slate-500 mb-1">Aperçu:</p>
+                                                    <p className="text-slate-900 dark:text-white text-sm font-medium" style={{ fontFamily: FONT_OPTIONS.find(f => f.value === themeFontFamily)?.css || 'inherit' }}>
+                                                        Electro Mart — Votre boutique en Algérie
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <p className="text-xs text-slate-500 mt-2">S&apos;applique à tout le texte du site (titres, paragraphes, boutons).</p>
                                         </div>
                                     </div>
                                 </div>

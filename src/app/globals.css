@@ -3,12 +3,12 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme {
-  --color-primary: #FF6B00;
-  --color-primary-light: #FF8533;
-  --color-primary-dark: #E65100;
-  --color-admin-primary: #f96f16;
+  --color-primary: var(--site-primary, #FF6B00);
+  --color-primary-light: var(--site-primary-light, #FF8533);
+  --color-primary-dark: var(--site-primary-dark, #E65100);
+  --color-admin-primary: var(--site-primary, #f96f16);
   --color-admin-primary-content: #ffffff;
-  --color-admin-primary-dark: #c2410c;
+  --color-admin-primary-dark: var(--site-primary-dark, #c2410c);
   --color-admin-primary-light: #ffedd5;
   --color-background-light: #f8f7f6;
   --color-background-dark: #221c10;
@@ -22,8 +22,8 @@
   --color-text-secondary-dark: #a89f8d;
   --color-border-light: #e6e4df;
   --color-border-dark: #3e362a;
-  --font-display: var(--font-inter);
-  --font-sans: var(--font-inter);
+  --font-display: var(--site-font, var(--font-inter));
+  --font-sans: var(--site-font, var(--font-inter));
 }
 
 @layer base {

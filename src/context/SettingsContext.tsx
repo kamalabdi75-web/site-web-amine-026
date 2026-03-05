@@ -25,6 +25,8 @@ export interface WebsiteSettings {
     social_tiktok?: string | null;
     social_youtube?: string | null;
     social_twitter?: string | null;
+    theme_primary_color?: string | null;
+    theme_font_family?: string | null;
     updated_at: string;
 }
 
