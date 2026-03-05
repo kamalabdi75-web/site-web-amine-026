@@ -159,7 +159,7 @@ export default function HomeHeader() {
                     <div className="relative bg-white dark:bg-slate-900 shadow-2xl px-4 pt-4 pb-6 animate-[slideDown_0.2s_ease-out]">
                         <div className="flex items-center gap-3 mb-1">
                             <div className="flex-1">
-                                <SearchBar autoFocus onSearch={() => setIsMobileSearchOpen(false)} />
+                                <SearchBar autoFocus showAllOnOpen onSearch={() => setIsMobileSearchOpen(false)} />
                             </div>
                             <button
                                 onClick={() => setIsMobileSearchOpen(false)}
