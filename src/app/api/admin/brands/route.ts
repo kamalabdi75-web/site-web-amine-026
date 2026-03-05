@@ -82,6 +82,35 @@ export async function POST(request: Request) {
     }
 }
 
+export async function PUT(request: Request) {
+    try {
+        const { id, name, image_url, width, height } = await request.json();
+
+        if (!id) {
+            return NextResponse.json({ error: 'Brand ID is required' }, { status: 400 });
+        }
+        if (!image_url) {
+            return NextResponse.json({ error: 'Image URL is required' }, { status: 400 });
+        }
+
+        const supabase = await getSupabaseAdmin();
+
+        const { data, error } = await supabase
+            .from('brands')
+            .update({ name: name || null, image_url, width: width || 120, height: height || 60 })
+            .eq('id', id)
+            .select()
+            .single();
+
+        if (error) throw error;
+
+        return NextResponse.json({ brand: data });
+    } catch (err: any) {
+        console.error('Error updating brand:', err);
+        return NextResponse.json({ error: 'Failed to update brand' }, { status: 500 });
+    }
+}
+
 export async function DELETE(request: Request) {
     try {
         const { searchParams } = new URL(request.url);
