@@ -15,6 +15,9 @@ export interface WebsiteSettings {
     whatsapp_offset_x: number;
     whatsapp_offset_y: number;
     maps_embed_url?: string | null;
+    maps_store_image_url?: string | null;
+    maps_store_name?: string | null;
+    maps_store_address?: string | null;
     updated_at: string;
 }
 

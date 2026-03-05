@@ -22,6 +22,10 @@ export default function AdminSettingsPage() {
     const [whatsappOffsetX, setWhatsappOffsetX] = useState<number>(24);
     const [whatsappOffsetY, setWhatsappOffsetY] = useState<number>(24);
     const [mapsEmbedUrl, setMapsEmbedUrl] = useState<string>("");
+    const [mapsStoreImageUrl, setMapsStoreImageUrl] = useState<string>("");
+    const [mapsStoreName, setMapsStoreName] = useState<string>("");
+    const [mapsStoreAddress, setMapsStoreAddress] = useState<string>("");
+    const [isUploadingStoreImage, setIsUploadingStoreImage] = useState(false);
 
     const [uploading, setUploading] = useState(false);
     const [successMessage, setSuccessMessage] = useState("");
@@ -40,6 +44,9 @@ export default function AdminSettingsPage() {
             setWhatsappOffsetX(settings.whatsapp_offset_x || 24);
             setWhatsappOffsetY(settings.whatsapp_offset_y || 24);
             setMapsEmbedUrl(settings.maps_embed_url || "");
+            setMapsStoreImageUrl(settings.maps_store_image_url || "");
+            setMapsStoreName(settings.maps_store_name || "");
+            setMapsStoreAddress(settings.maps_store_address || "");
         }
     }, [settings]);
 
@@ -95,6 +102,9 @@ export default function AdminSettingsPage() {
                 whatsapp_offset_x: whatsappOffsetX,
                 whatsapp_offset_y: whatsappOffsetY,
                 maps_embed_url: mapsEmbedUrl || null,
+                maps_store_image_url: mapsStoreImageUrl || null,
+                maps_store_name: mapsStoreName || null,
+                maps_store_address: mapsStoreAddress || null,
                 updated_at: new Date().toISOString(),
             };
 
@@ -418,6 +428,78 @@ export default function AdminSettingsPage() {
                                                 />
                                             </div>
                                         )}
+
+                                        {/* Store Info */}
+                                        <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
+                                            <h3 className="text-sm font-bold text-slate-800 dark:text-white mb-4">Informations du Magasin (affichées à côté de la carte)</h3>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <div>
+                                                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Photo du Magasin</label>
+                                                    <div className="flex items-center gap-3">
+                                                        {mapsStoreImageUrl ? (
+                                                            <div className="relative size-16 shrink-0 rounded-xl overflow-hidden border border-slate-200">
+                                                                <img src={mapsStoreImageUrl} alt="Store" className="w-full h-full object-cover" />
+                                                                <button type="button" onClick={() => setMapsStoreImageUrl("")} className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full size-5 flex items-center justify-center shadow-md">
+                                                                    <span className="material-symbols-outlined text-[12px]">close</span>
+                                                                </button>
+                                                            </div>
+                                                        ) : (
+                                                            <div className="size-16 shrink-0 rounded-xl bg-slate-100 dark:bg-slate-900 border border-dashed border-slate-300 dark:border-slate-700 flex items-center justify-center text-slate-400">
+                                                                <span className="material-symbols-outlined text-[20px]">store</span>
+                                                            </div>
+                                                        )}
+                                                        <div className="flex-1">
+                                                            <input
+                                                                type="file"
+                                                                accept="image/*"
+                                                                disabled={isUploadingStoreImage}
+                                                                onChange={async (e) => {
+                                                                    const file = e.target.files?.[0];
+                                                                    if (!file) return;
+                                                                    setIsUploadingStoreImage(true);
+                                                                    try {
+                                                                        const fileExt = file.name.split('.').pop();
+                                                                        const filePath = `store/store_photo_${Date.now()}.${fileExt}`;
+                                                                        const { error: uploadError } = await supabase.storage.from("landing_media").upload(filePath, file, { cacheControl: '3600', upsert: false });
+                                                                        if (uploadError) throw uploadError;
+                                                                        const { data } = supabase.storage.from("landing_media").getPublicUrl(filePath);
+                                                                        setMapsStoreImageUrl(data.publicUrl);
+                                                                    } catch (err: any) {
+                                                                        setErrorMessage(err.message);
+                                                                    } finally {
+                                                                        setIsUploadingStoreImage(false);
+                                                                    }
+                                                                }}
+                                                                className="block w-full text-sm text-slate-500 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 disabled:opacity-50"
+                                                            />
+                                                            {isUploadingStoreImage && <p className="text-xs text-primary mt-1 animate-pulse">Téléchargement...</p>}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="space-y-3">
+                                                    <div>
+                                                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Nom du Magasin</label>
+                                                        <input
+                                                            type="text"
+                                                            value={mapsStoreName}
+                                                            onChange={(e) => setMapsStoreName(e.target.value)}
+                                                            placeholder="ex: ElectroMart Alger"
+                                                            className="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-4 py-2.5 text-sm focus:ring-primary focus:border-primary"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Adresse du Magasin</label>
+                                                        <textarea
+                                                            value={mapsStoreAddress}
+                                                            onChange={(e) => setMapsStoreAddress(e.target.value)}
+                                                            placeholder="ex: 12 Rue Didouche Mourad, Alger"
+                                                            rows={2}
+                                                            className="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-4 py-2.5 text-sm focus:ring-primary focus:border-primary resize-none"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
 
