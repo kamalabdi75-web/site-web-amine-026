@@ -483,21 +483,34 @@ export default function AdminSettingsPage() {
                                                     <li>Ouvrez <strong>Google Maps</strong> sur votre ordinateur</li>
                                                     <li>Recherchez votre adresse/magasin</li>
                                                     <li>Cliquez sur <strong>Partager</strong> (Share)</li>
-                                                    <li>Choisissez l'onglet <strong>"Intégrer une carte"</strong></li>
-                                                    <li>Copiez <strong>uniquement le lien dans</strong> <code className="bg-blue-100 dark:bg-blue-900 px-1.5 py-0.5 rounded font-mono">src="..."</code></li>
+                                                    <li>Choisissez l&apos;onglet <strong>&quot;Intégrer une carte&quot;</strong></li>
+                                                    <li>Copiez <strong>tout le code iframe</strong> ou <strong>uniquement le lien dans</strong> <code className="bg-blue-100 dark:bg-blue-900 px-1.5 py-0.5 rounded font-mono">src=&quot;...&quot;</code></li>
                                                 </ol>
-                                                <p className="text-green-700 dark:text-green-400 font-medium">✅ Bon lien: <code className="bg-green-100 dark:bg-green-900 px-1 rounded">https://www.google.com/maps/embed?pb=...</code></p>
+                                                <p className="text-green-700 dark:text-green-400 font-medium">✅ Vous pouvez coller le code iframe complet — l&apos;URL sera extraite automatiquement !</p>
                                                 <p className="text-red-600 dark:text-red-400 font-medium">❌ Mauvais lien: <code className="bg-red-100 dark:bg-red-900 px-1 rounded">https://maps.app.goo.gl/...</code></p>
                                             </div>
 
                                             <div className="relative">
-                                                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[20px]">map</span>
-                                                <input
-                                                    type="url"
+                                                <span className="material-symbols-outlined absolute left-3 top-3 text-slate-400 text-[20px]">map</span>
+                                                <textarea
                                                     value={mapsEmbedUrl}
-                                                    onChange={(e) => setMapsEmbedUrl(e.target.value)}
-                                                    placeholder="https://www.google.com/maps/embed?pb=..."
-                                                    className={`w-full rounded-xl border bg-white dark:bg-slate-900 pl-10 pr-4 py-2.5 text-sm focus:ring-primary focus:border-primary ${mapsEmbedUrl && !mapsEmbedUrl.includes('google.com/maps/embed')
+                                                    onChange={(e) => {
+                                                        let val = e.target.value.trim();
+                                                        // Auto-extract src URL from pasted iframe code
+                                                        const srcMatch = val.match(/src=["']([^"']+)["']/);
+                                                        if (srcMatch && srcMatch[1]) {
+                                                            val = srcMatch[1];
+                                                        }
+                                                        // Clean up any trailing HTML attributes that may have been pasted
+                                                        const quoteIdx = val.indexOf('"');
+                                                        if (quoteIdx > 0 && val.startsWith('http')) {
+                                                            val = val.substring(0, quoteIdx);
+                                                        }
+                                                        setMapsEmbedUrl(val);
+                                                    }}
+                                                    placeholder="Collez ici le code iframe complet ou l'URL: https://www.google.com/maps/embed?pb=..."
+                                                    rows={3}
+                                                    className={`w-full rounded-xl border bg-white dark:bg-slate-900 pl-10 pr-4 py-2.5 text-sm focus:ring-primary focus:border-primary resize-none ${mapsEmbedUrl && !mapsEmbedUrl.includes('google.com/maps/embed')
                                                         ? 'border-red-400 focus:ring-red-400'
                                                         : 'border-slate-300 dark:border-slate-600'
                                                         }`}
