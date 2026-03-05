@@ -18,6 +18,13 @@ export interface WebsiteSettings {
     maps_store_image_url?: string | null;
     maps_store_name?: string | null;
     maps_store_address?: string | null;
+    contact_phone?: string | null;
+    contact_email?: string | null;
+    social_facebook?: string | null;
+    social_instagram?: string | null;
+    social_tiktok?: string | null;
+    social_youtube?: string | null;
+    social_twitter?: string | null;
     updated_at: string;
 }
 

@@ -27,6 +27,14 @@ export default function AdminSettingsPage() {
     const [mapsStoreAddress, setMapsStoreAddress] = useState<string>("");
     const [isUploadingStoreImage, setIsUploadingStoreImage] = useState(false);
 
+    const [contactPhone, setContactPhone] = useState<string>("");
+    const [contactEmail, setContactEmail] = useState<string>("");
+    const [socialFacebook, setSocialFacebook] = useState<string>("");
+    const [socialInstagram, setSocialInstagram] = useState<string>("");
+    const [socialTiktok, setSocialTiktok] = useState<string>("");
+    const [socialYoutube, setSocialYoutube] = useState<string>("");
+    const [socialTwitter, setSocialTwitter] = useState<string>("");
+
     const [uploading, setUploading] = useState(false);
     const [successMessage, setSuccessMessage] = useState("");
     const [errorMessage, setErrorMessage] = useState("");
@@ -47,6 +55,13 @@ export default function AdminSettingsPage() {
             setMapsStoreImageUrl(settings.maps_store_image_url || "");
             setMapsStoreName(settings.maps_store_name || "");
             setMapsStoreAddress(settings.maps_store_address || "");
+            setContactPhone(settings.contact_phone || "");
+            setContactEmail(settings.contact_email || "");
+            setSocialFacebook(settings.social_facebook || "");
+            setSocialInstagram(settings.social_instagram || "");
+            setSocialTiktok(settings.social_tiktok || "");
+            setSocialYoutube(settings.social_youtube || "");
+            setSocialTwitter(settings.social_twitter || "");
         }
     }, [settings]);
 
@@ -105,6 +120,13 @@ export default function AdminSettingsPage() {
                 maps_store_image_url: mapsStoreImageUrl || null,
                 maps_store_name: mapsStoreName || null,
                 maps_store_address: mapsStoreAddress || null,
+                contact_phone: contactPhone || null,
+                contact_email: contactEmail || null,
+                social_facebook: socialFacebook || null,
+                social_instagram: socialInstagram || null,
+                social_tiktok: socialTiktok || null,
+                social_youtube: socialYoutube || null,
+                social_twitter: socialTwitter || null,
                 updated_at: new Date().toISOString(),
             };
 
@@ -421,8 +443,8 @@ export default function AdminSettingsPage() {
                                                     onChange={(e) => setMapsEmbedUrl(e.target.value)}
                                                     placeholder="https://www.google.com/maps/embed?pb=..."
                                                     className={`w-full rounded-xl border bg-white dark:bg-slate-900 pl-10 pr-4 py-2.5 text-sm focus:ring-primary focus:border-primary ${mapsEmbedUrl && !mapsEmbedUrl.includes('google.com/maps/embed')
-                                                            ? 'border-red-400 focus:ring-red-400'
-                                                            : 'border-slate-300 dark:border-slate-600'
+                                                        ? 'border-red-400 focus:ring-red-400'
+                                                        : 'border-slate-300 dark:border-slate-600'
                                                         }`}
                                                 />
                                             </div>
@@ -527,6 +549,79 @@ export default function AdminSettingsPage() {
                                                         />
                                                     </div>
                                                 </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Contact & Social Section */}
+                                <div className="pt-8 border-t border-slate-200 dark:border-slate-700">
+                                    <div className="mb-6">
+                                        <h2 className="text-lg font-bold text-slate-900 dark:text-white">Contact &amp; Réseaux Sociaux</h2>
+                                        <p className="text-sm text-slate-500 mt-1">Ces informations s&apos;affichent dans le menu mobile en bas de l&apos;écran.</p>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                        {/* Phone */}
+                                        <div>
+                                            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Numéro de Téléphone</label>
+                                            <div className="relative">
+                                                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">phone</span>
+                                                <input type="tel" value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} placeholder="+213 770 06 16 12"
+                                                    className="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 pl-10 pr-4 py-2.5 text-sm focus:ring-primary focus:border-primary" />
+                                            </div>
+                                        </div>
+                                        {/* Email */}
+                                        <div>
+                                            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Adresse Email</label>
+                                            <div className="relative">
+                                                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">mail</span>
+                                                <input type="email" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} placeholder="contact@electromart.dz"
+                                                    className="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 pl-10 pr-4 py-2.5 text-sm focus:ring-primary focus:border-primary" />
+                                            </div>
+                                        </div>
+                                        {/* Facebook */}
+                                        <div>
+                                            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Facebook (URL)</label>
+                                            <div className="relative">
+                                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#1877F2] font-black text-sm">f</span>
+                                                <input type="url" value={socialFacebook} onChange={(e) => setSocialFacebook(e.target.value)} placeholder="https://facebook.com/votrepage"
+                                                    className="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 pl-7 pr-4 py-2.5 text-sm focus:ring-primary focus:border-primary" />
+                                            </div>
+                                        </div>
+                                        {/* Instagram */}
+                                        <div>
+                                            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Instagram (URL)</label>
+                                            <div className="relative">
+                                                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[18px]" style={{ color: '#E1306C' }}>photo_camera</span>
+                                                <input type="url" value={socialInstagram} onChange={(e) => setSocialInstagram(e.target.value)} placeholder="https://instagram.com/votrepage"
+                                                    className="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 pl-10 pr-4 py-2.5 text-sm focus:ring-primary focus:border-primary" />
+                                            </div>
+                                        </div>
+                                        {/* TikTok */}
+                                        <div>
+                                            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">TikTok (URL)</label>
+                                            <div className="relative">
+                                                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">music_note</span>
+                                                <input type="url" value={socialTiktok} onChange={(e) => setSocialTiktok(e.target.value)} placeholder="https://tiktok.com/@votrepage"
+                                                    className="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 pl-10 pr-4 py-2.5 text-sm focus:ring-primary focus:border-primary" />
+                                            </div>
+                                        </div>
+                                        {/* YouTube */}
+                                        <div>
+                                            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">YouTube (URL)</label>
+                                            <div className="relative">
+                                                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[18px]" style={{ color: '#FF0000' }}>play_circle</span>
+                                                <input type="url" value={socialYoutube} onChange={(e) => setSocialYoutube(e.target.value)} placeholder="https://youtube.com/@votrechaine"
+                                                    className="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 pl-10 pr-4 py-2.5 text-sm focus:ring-primary focus:border-primary" />
+                                            </div>
+                                        </div>
+                                        {/* Twitter/X */}
+                                        <div>
+                                            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Twitter / X (URL)</label>
+                                            <div className="relative">
+                                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600 dark:text-slate-400 font-black text-sm">𝕏</span>
+                                                <input type="url" value={socialTwitter} onChange={(e) => setSocialTwitter(e.target.value)} placeholder="https://x.com/votrepage"
+                                                    className="w-full rounded-xl border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 pl-7 pr-4 py-2.5 text-sm focus:ring-primary focus:border-primary" />
                                             </div>
                                         </div>
                                     </div>

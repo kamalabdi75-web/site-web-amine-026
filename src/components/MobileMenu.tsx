@@ -3,14 +3,15 @@
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
-import { mobileMenuCategories, Category } from "@/data/categories";
 import { supabase } from "@/lib/supabase";
+import { useSettings } from "@/context/SettingsContext";
 
 export default function MobileMenu() {
     const [isOpen, setIsOpen] = useState(false);
     const [mounted, setMounted] = useState(false);
     const [categories, setCategories] = useState<any[]>([]);
     const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
+    const { settings } = useSettings();
 
     // Fetch categories and subcategories from Supabase
     useEffect(() => {
@@ -48,6 +49,17 @@ export default function MobileMenu() {
         };
     }, [isOpen]);
 
+    // Build social links array from settings (only configured ones)
+    const socialLinks = [
+        settings?.social_facebook && { label: "Facebook", url: settings.social_facebook, color: "#1877F2", icon: "f", type: "text" },
+        settings?.social_instagram && { label: "Instagram", url: settings.social_instagram, color: "#E1306C", icon: "photo_camera", type: "material" },
+        settings?.social_tiktok && { label: "TikTok", url: settings.social_tiktok, color: "#ffffff", icon: "music_note", type: "material" },
+        settings?.social_youtube && { label: "YouTube", url: settings.social_youtube, color: "#FF0000", icon: "play_circle", type: "material" },
+        settings?.social_twitter && { label: "X", url: settings.social_twitter, color: "#ffffff", icon: "𝕏", type: "text" },
+    ].filter(Boolean) as { label: string; url: string; color: string; icon: string; type: string }[];
+
+    const hasContact = settings?.contact_phone || settings?.contact_email || socialLinks.length > 0;
+
     const menuContent = (
         <>
             {/* Overlay */}
@@ -75,7 +87,7 @@ export default function MobileMenu() {
                     </button>
                 </div>
 
-                {/* Promotional / Preorder banner (optional addition from screenshot) */}
+                {/* Promotional / Preorder banner */}
                 <div className="bg-primary/10 border-b border-primary/20 px-5 py-3 flex flex-col justify-center">
                     <p className="text-xs text-primary-light font-medium text-center leading-tight">
                         Précommandez dès maintenant et bénéficiez d&apos;offres exceptionnelles !
@@ -138,8 +150,61 @@ export default function MobileMenu() {
                         </div>
                     ))}
 
+                    {/* Contact & Social info panel */}
+                    {hasContact && (
+                        <div className="mt-3 pt-4 border-t border-white/10">
+                            {/* Phone & Email */}
+                            <div className="flex flex-col gap-2 mb-3">
+                                {settings?.contact_phone && (
+                                    <a
+                                        href={`tel:${settings.contact_phone.replace(/\s/g, '')}`}
+                                        className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-white/5 transition-colors group"
+                                    >
+                                        <div className="size-9 rounded-lg bg-primary/20 flex items-center justify-center shrink-0">
+                                            <span className="material-symbols-outlined text-primary text-[18px]">phone</span>
+                                        </div>
+                                        <span className="text-white/80 text-sm font-medium group-hover:text-white transition-colors">{settings.contact_phone}</span>
+                                    </a>
+                                )}
+                                {settings?.contact_email && (
+                                    <a
+                                        href={`mailto:${settings.contact_email}`}
+                                        className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-white/5 transition-colors group"
+                                    >
+                                        <div className="size-9 rounded-lg bg-primary/20 flex items-center justify-center shrink-0">
+                                            <span className="material-symbols-outlined text-primary text-[18px]">mail</span>
+                                        </div>
+                                        <span className="text-white/80 text-sm font-medium group-hover:text-white transition-colors truncate">{settings.contact_email}</span>
+                                    </a>
+                                )}
+                            </div>
+
+                            {/* Social Media Icons Row */}
+                            {socialLinks.length > 0 && (
+                                <div className="flex items-center gap-2 px-2 pb-1 flex-wrap">
+                                    {socialLinks.map((social) => (
+                                        <a
+                                            key={social.label}
+                                            href={social.url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            title={social.label}
+                                            className="size-10 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all hover:scale-110"
+                                        >
+                                            {social.type === "material" ? (
+                                                <span className="material-symbols-outlined text-[18px]" style={{ color: social.color }}>{social.icon}</span>
+                                            ) : (
+                                                <span className="font-black text-sm" style={{ color: social.color }}>{social.icon}</span>
+                                            )}
+                                        </a>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
                     {/* Admin Access Link */}
-                    <div className="mt-4 pt-4 border-t border-white/10">
+                    <div className={`${hasContact ? 'mt-2' : 'mt-4'} pt-4 border-t border-white/10`}>
                         <Link
                             href="/admin-login"
                             onClick={() => setIsOpen(false)}
