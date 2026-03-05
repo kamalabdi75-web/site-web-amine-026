@@ -30,6 +30,12 @@ export default function CheckoutPage() {
     const [isLoadingCommunes, setIsLoadingCommunes] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    // Promo code state
+    const [promoInput, setPromoInput] = useState("");
+    const [promoResult, setPromoResult] = useState<{ valid: boolean; discount_amount: number; discount_type: string; discount_value: number; code: string; description?: string; promo_id?: string } | null>(null);
+    const [promoError, setPromoError] = useState("");
+    const [promoLoading, setPromoLoading] = useState(false);
+
     // Form state
     const [formData, setFormData] = useState({
         customer_name: "",
@@ -48,7 +54,30 @@ export default function CheckoutPage() {
 
     // Calculated Shipping
     const shippingCost = isFreeShipping ? 0 : (selectedCommune ? selectedCommune.shipping_cost : 0);
-    const total = subtotal + shippingCost;
+    const promoDiscount = promoResult?.valid ? promoResult.discount_amount : 0;
+    const total = subtotal + shippingCost - promoDiscount;
+
+    const handleApplyPromo = async () => {
+        const code = promoInput.trim().toUpperCase();
+        if (!code) return;
+        setPromoLoading(true);
+        setPromoError("");
+        setPromoResult(null);
+        try {
+            const res = await fetch('/api/promo/validate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code, order_amount: subtotal }),
+            });
+            const data = await res.json();
+            if (data.valid) {
+                setPromoResult(data);
+            } else {
+                setPromoError(data.error || "Code invalide");
+            }
+        } catch { setPromoError("Erreur réseau"); }
+        finally { setPromoLoading(false); }
+    };
 
     useEffect(() => {
         fetchActiveWilayas();
@@ -441,6 +470,46 @@ export default function CheckoutPage() {
 
                             <div className="border-t border-border-light dark:border-border-dark my-4"></div>
 
+                            {/* Promo code input */}
+                            <div className="mb-4">
+                                {promoResult?.valid ? (
+                                    <div className="flex items-center gap-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-xl px-3 py-2">
+                                        <span className="material-symbols-outlined text-green-600 text-[18px]">check_circle</span>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-xs font-black text-green-700 dark:text-green-400 tracking-widest">{promoResult.code}</p>
+                                            <p className="text-[10px] text-green-600 dark:text-green-500">
+                                                -{promoResult.discount_type === 'percentage' ? `${promoResult.discount_value}%` : `${Number(promoResult.discount_value).toLocaleString()} DA`}
+                                            </p>
+                                        </div>
+                                        <button onClick={() => { setPromoResult(null); setPromoInput(""); setPromoError(""); }} className="text-green-500 hover:text-red-500 transition-colors">
+                                            <span className="material-symbols-outlined text-[18px]">close</span>
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="flex gap-2">
+                                        <div className="flex-1 relative">
+                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-primary text-[16px]">confirmation_number</span>
+                                            <input
+                                                value={promoInput}
+                                                onChange={e => { setPromoInput(e.target.value.toUpperCase()); setPromoError(""); }}
+                                                onKeyDown={e => e.key === 'Enter' && handleApplyPromo()}
+                                                placeholder="Code promo"
+                                                className="w-full pl-9 pr-3 py-2 text-sm font-mono font-bold uppercase tracking-widest border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+                                            />
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={handleApplyPromo}
+                                            disabled={promoLoading || !promoInput.trim()}
+                                            className="px-3 py-2 bg-primary text-white font-bold rounded-xl text-sm hover:bg-primary-dark transition-colors disabled:opacity-50 flex items-center gap-1"
+                                        >
+                                            {promoLoading ? <span className="material-symbols-outlined animate-spin text-[16px]">autorenew</span> : "OK"}
+                                        </button>
+                                    </div>
+                                )}
+                                {promoError && <p className="text-xs text-red-500 mt-1 flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">error</span>{promoError}</p>}
+                            </div>
+
                             <div className="space-y-3">
                                 <div className="flex justify-between text-text-secondary-light dark:text-text-secondary-dark">
                                     <span>Sous-total</span>
@@ -452,6 +521,12 @@ export default function CheckoutPage() {
                                         {selectedCommune ? (isFreeShipping ? "GRATUIT" : `${shippingCost.toLocaleString()} DA`) : "En attente"}
                                     </span>
                                 </div>
+                                {promoDiscount > 0 && (
+                                    <div className="flex justify-between text-green-600 dark:text-green-400">
+                                        <span className="flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">local_offer</span>Réduction</span>
+                                        <span className="font-bold">-{promoDiscount.toLocaleString()} DA</span>
+                                    </div>
+                                )}
                             </div>
 
                             <div className="border-t border-border-light dark:border-border-dark mt-4 pt-4 flex justify-between items-center">
