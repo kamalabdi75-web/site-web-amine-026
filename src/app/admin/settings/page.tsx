@@ -537,13 +537,11 @@ export default function AdminSettingsPage() {
                                                 </p>
                                                 <iframe
                                                     src={mapsEmbedUrl}
-                                                    width="100%"
-                                                    height="400"
                                                     style={{ border: 0 }}
                                                     allowFullScreen
                                                     loading="lazy"
                                                     referrerPolicy="no-referrer-when-downgrade"
-                                                    className="block"
+                                                    className="block w-full h-[400px]"
                                                 />
                                             </div>
                                         )}
