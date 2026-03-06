@@ -6,8 +6,8 @@ import Logo from "@/components/Logo";
 import Link from "next/link";
 
 export default function AdminLoginPage() {
-    const [email, setEmail] = useState("ElectroMart123@gmail.com");
-    const [password, setPassword] = useState("ElectroMart@2026");
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const router = useRouter();
@@ -57,7 +57,7 @@ export default function AdminLoginPage() {
                         </div>
                     )}
 
-                    <form onSubmit={handleLogin} className="flex flex-col gap-6">
+                    <form onSubmit={handleLogin} className="flex flex-col gap-6" autoComplete="off">
                         <div className="flex flex-col gap-2">
                             <label className="text-sm font-bold text-slate-700 dark:text-slate-300 ml-1" htmlFor="email">Email professionnel</label>
                             <div className="relative">
@@ -70,6 +70,7 @@ export default function AdminLoginPage() {
                                     className="w-full pl-12 pr-4 py-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border-transparent focus:bg-white dark:focus:bg-slate-800 border-2 focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all text-sm outline-none text-slate-900 dark:text-white"
                                     placeholder="admin@electromart.com"
                                     required
+                                    autoComplete="off"
                                 />
                             </div>
                         </div>
@@ -86,6 +87,7 @@ export default function AdminLoginPage() {
                                     className="w-full pl-12 pr-4 py-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border-transparent focus:bg-white dark:focus:bg-slate-800 border-2 focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all text-sm outline-none text-slate-900 dark:text-white"
                                     placeholder="••••••••••••"
                                     required
+                                    autoComplete="new-password"
                                 />
                             </div>
                         </div>
