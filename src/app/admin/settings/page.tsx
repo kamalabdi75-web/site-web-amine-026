@@ -538,7 +538,7 @@ export default function AdminSettingsPage() {
                                                 <iframe
                                                     src={mapsEmbedUrl}
                                                     width="100%"
-                                                    height="250"
+                                                    height="400"
                                                     style={{ border: 0 }}
                                                     allowFullScreen
                                                     loading="lazy"
